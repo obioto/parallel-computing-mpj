@@ -1,6 +1,8 @@
 package ch.sebastianhaeni.pancake;
 
-class SearchResult {
+import java.io.Serializable;
+
+class SearchResult implements Serializable {
     Node solutionNode;
     int bound;
 

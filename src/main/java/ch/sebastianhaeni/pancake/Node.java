@@ -1,16 +1,25 @@
 package ch.sebastianhaeni.pancake;
 
+import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
-class Node {
+class Node implements Serializable {
     private final int[] pancakes;
     private final int flipCount;
+    private final Node parent;
+    private final int flipPosition;
 
-    Node(int[] pancakes, int flipCount) {
+    Node(int[] pancakes) {
+        this(pancakes, 0, null, -1);
+    }
+
+    Node(int[] pancakes, int flipCount, Node parent, int flipPosition) {
         this.pancakes = pancakes;
         this.flipCount = flipCount;
+        this.parent = parent;
+        this.flipPosition = flipPosition;
     }
 
     int getOptimisticDistanceToSolution() {
@@ -54,7 +63,10 @@ class Node {
         for (int i = 1; i < pancakes.length; i++) {
             int pancake = pancakes[i];
             if (pancake - current != 1) {
-                list.add(flip(i + 1));
+                int flipPosition = i + 1;
+                if (flipPosition != this.flipPosition) {
+                    list.add(flip(flipPosition));
+                }
             }
             current = pancake;
         }
@@ -72,10 +84,15 @@ class Node {
 
         System.arraycopy(pancakes, flipPosition, flipped, flipPosition, pancakes.length - flipPosition);
 
-        return new Node(flipped, getFlipCount() + 1);
+        return new Node(flipped, getFlipCount() + 1, this, flipPosition);
     }
 
     int[] getPancakes() {
         return pancakes;
     }
+
+    Node getParent() {
+        return parent;
+    }
+
 }
