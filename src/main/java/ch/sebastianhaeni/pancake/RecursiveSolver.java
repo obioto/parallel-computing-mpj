@@ -13,7 +13,7 @@ public class RecursiveSolver {
 //        Node root = new Node(new int[]{11, 7, 15, 6, 17, 3, 19, 16, 4, 10, 8, 12, 20, 14, 2, 5, 1, 9, 13, 18});
         Node root = new Node(new int[]{5, 2, 7, 10, 13, 16, 14, 6, 8, 18, 15, 11, 1, 12, 3, 4, 9, 17});
 
-        System.out.format("Solving a pancake pile of height %d.\n", root.getPancakes().length);
+        System.out.format("Solving a pancake pile of height %d.\n", root.getState().length);
 
         long start = System.currentTimeMillis();
         Node solution = solve(root);
@@ -25,12 +25,12 @@ public class RecursiveSolver {
             System.out.println("No solution found");
             return;
         }
-        System.out.format("Found solution after %d flips.\n", solution.getFlipCount());
+        System.out.format("Found solution after %d flips.\n", solution.getDepth());
 
         StringBuilder sb = new StringBuilder();
         Node current = solution;
         while (current.getParent() != null) {
-            sb.insert(0, Arrays.toString(current.getParent().getPancakes()) + "\n");
+            sb.insert(0, Arrays.toString(current.getParent().getState()) + "\n");
             current = current.getParent();
         }
 
@@ -64,7 +64,7 @@ public class RecursiveSolver {
     }
 
     private static SearchResult search(Node node, int bound) {
-        int newBound = node.getFlipCount() + node.getOptimisticDistanceToSolution();
+        int newBound = node.getDepth() + node.getOptimisticDistanceToSolution();
 
         if (newBound > bound) {
             return new SearchResult(newBound);

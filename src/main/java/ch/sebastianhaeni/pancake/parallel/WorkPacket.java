@@ -1,21 +1,23 @@
-package ch.sebastianhaeni.pancake;
+package ch.sebastianhaeni.pancake.parallel;
+
+import ch.sebastianhaeni.pancake.Node;
 
 import java.io.Serializable;
 
-public class WorkPacket implements Serializable {
+class WorkPacket implements Serializable {
     private final Node node;
     private final int bound;
 
-    public WorkPacket(Node node, int bound) {
+    WorkPacket(Node node, int bound) {
         this.node = node;
         this.bound = bound;
     }
 
-    public Node getNode() {
+    Node getNode() {
         return node;
     }
 
-    public int getBound() {
+    int getBound() {
         return bound;
     }
 }

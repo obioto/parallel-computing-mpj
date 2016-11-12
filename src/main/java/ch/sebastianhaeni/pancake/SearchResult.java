@@ -2,15 +2,23 @@ package ch.sebastianhaeni.pancake;
 
 import java.io.Serializable;
 
-class SearchResult implements Serializable {
+public class SearchResult implements Serializable {
     Node solutionNode;
     int bound;
 
-    SearchResult(Node node) {
+    public SearchResult(Node node) {
         this.solutionNode = node;
     }
 
-    SearchResult(int bound) {
+    public SearchResult(int bound) {
         this.bound = bound;
+    }
+
+    public Node getSolutionNode() {
+        return solutionNode;
+    }
+
+    public int getBound() {
+        return bound;
     }
 }

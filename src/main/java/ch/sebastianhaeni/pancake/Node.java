@@ -5,29 +5,29 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
-class Node implements Serializable {
-    private final int[] pancakes;
-    private final int flipCount;
+public class Node implements Serializable {
+    private final int[] state;
+    private final int depth;
     private final Node parent;
     private final int flipPosition;
 
-    Node(int[] pancakes) {
-        this(pancakes, 0, null, -1);
+    public Node(int[] state) {
+        this(state, 0, null, -1);
     }
 
-    Node(int[] pancakes, int flipCount, Node parent, int flipPosition) {
-        this.pancakes = pancakes;
-        this.flipCount = flipCount;
+    private Node(int[] state, int depth, Node parent, int flipPosition) {
+        this.state = state;
+        this.depth = depth;
         this.parent = parent;
         this.flipPosition = flipPosition;
     }
 
-    int getOptimisticDistanceToSolution() {
+    public int getOptimisticDistanceToSolution() {
         int distance = 0;
         int current = 1;
 
-        for (int i = 1; i < pancakes.length; i++) {
-            int pancake = pancakes[i];
+        for (int i = 1; i < state.length; i++) {
+            int pancake = state[i];
             if (Math.abs(pancake - current) != 1) {
                 distance++;
             }
@@ -37,15 +37,15 @@ class Node implements Serializable {
         return distance;
     }
 
-    int getFlipCount() {
-        return flipCount;
+    public int getDepth() {
+        return depth;
     }
 
-    boolean isSolution() {
+    public boolean isSolution() {
         int current = 1;
 
-        for (int i = 1; i < pancakes.length; i++) {
-            int pancake = pancakes[i];
+        for (int i = 1; i < state.length; i++) {
+            int pancake = state[i];
             if (pancake - current != 1) {
                 return false;
             }
@@ -55,13 +55,13 @@ class Node implements Serializable {
         return true;
     }
 
-    List<Node> nextNodes() {
+    public List<Node> nextNodes() {
         AbstractList<Node> list = new ArrayList<>();
 
-        int current = pancakes[1];
+        int current = state[1];
 
-        for (int i = 1; i < pancakes.length; i++) {
-            int pancake = pancakes[i];
+        for (int i = 1; i < state.length; i++) {
+            int pancake = state[i];
             if (pancake - current != 1) {
                 int flipPosition = i + 1;
                 if (flipPosition != this.flipPosition) {
@@ -76,22 +76,22 @@ class Node implements Serializable {
 
     Node flip(int flipPosition) {
 
-        int[] flipped = new int[pancakes.length];
+        int[] flipped = new int[state.length];
 
         for (int i = 0; i < flipPosition; i++) {
-            flipped[i] = pancakes[flipPosition - i - 1];
+            flipped[i] = state[flipPosition - i - 1];
         }
 
-        System.arraycopy(pancakes, flipPosition, flipped, flipPosition, pancakes.length - flipPosition);
+        System.arraycopy(state, flipPosition, flipped, flipPosition, state.length - flipPosition);
 
-        return new Node(flipped, getFlipCount() + 1, this, flipPosition);
+        return new Node(flipped, getDepth() + 1, this, flipPosition);
     }
 
-    int[] getPancakes() {
-        return pancakes;
+    public int[] getState() {
+        return state;
     }
 
-    Node getParent() {
+    public Node getParent() {
         return parent;
     }
 

@@ -13,21 +13,21 @@ public class NodeTest {
     public void testFlip1() {
         Node node = new Node(new int[]{1, 2});
         Node flip = node.flip(1);
-        assertArrayEquals(new int[]{1, 2}, flip.getPancakes());
+        assertArrayEquals(new int[]{1, 2}, flip.getState());
     }
 
     @Test
     public void testFlip2() {
         Node node = new Node(new int[]{1, 2, 3});
         Node flip = node.flip(2);
-        assertArrayEquals(new int[]{2, 1, 3}, flip.getPancakes());
+        assertArrayEquals(new int[]{2, 1, 3}, flip.getState());
     }
 
     @Test
     public void testFlip3() {
         Node node = new Node(new int[]{2, 6, 10, 5, 1, 3, 8, 4, 7, 9});
         Node flip = node.flip(5);
-        assertArrayEquals(new int[]{1, 5, 10, 6, 2, 3, 8, 4, 7, 9}, flip.getPancakes());
+        assertArrayEquals(new int[]{1, 5, 10, 6, 2, 3, 8, 4, 7, 9}, flip.getState());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class NodeTest {
         List<Node> nodes = node.nextNodes();
 
         assertEquals(2, nodes.size());
-        assertArrayEquals(nodes.get(0).getPancakes(), new int[]{1, 2, 3});
-        assertArrayEquals(nodes.get(1).getPancakes(), new int[]{3, 1, 2});
+        assertArrayEquals(nodes.get(0).getState(), new int[]{1, 2, 3});
+        assertArrayEquals(nodes.get(1).getState(), new int[]{3, 1, 2});
     }
 }
