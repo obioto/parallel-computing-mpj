@@ -1,10 +1,10 @@
-package ch.sebastianhaeni.pancake;
+package ch.sebastianhaeni.pancake.dto;
 
 import java.io.Serializable;
 
 public class SearchResult implements Serializable {
-    Node solutionNode;
-    int bound;
+    private Node solutionNode;
+    private int bound;
 
     public SearchResult(Node node) {
         this.solutionNode = node;

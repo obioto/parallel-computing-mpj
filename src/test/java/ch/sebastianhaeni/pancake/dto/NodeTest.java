@@ -1,10 +1,9 @@
-package ch.sebastianhaeni.pancake;
+package ch.sebastianhaeni.pancake.dto;
 
 import org.junit.Test;
 
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.*;
 
 public class NodeTest {

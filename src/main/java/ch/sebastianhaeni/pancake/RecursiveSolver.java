@@ -1,5 +1,8 @@
 package ch.sebastianhaeni.pancake;
 
+import ch.sebastianhaeni.pancake.dto.Node;
+import ch.sebastianhaeni.pancake.dto.SearchResult;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,7 +14,8 @@ public class RecursiveSolver {
 //        Node root = new Node(new int[]{2, 6, 10, 5, 1, 3, 8, 4, 7, 9});
 //        Node root = new Node(new int[]{3, 1, 2});
 //        Node root = new Node(new int[]{11, 7, 15, 6, 17, 3, 19, 16, 4, 10, 8, 12, 20, 14, 2, 5, 1, 9, 13, 18});
-        Node root = new Node(new int[]{5, 2, 7, 10, 13, 16, 14, 6, 8, 18, 15, 11, 1, 12, 3, 4, 9, 17});
+//        Node root = new Node(new int[]{5, 2, 7, 10, 13, 16, 14, 6, 8, 18, 15, 11, 1, 12, 3, 4, 9, 17});
+        Node root = new Node(new int[]{4,25,15,7,28,17,6,5,23,29,19,27,13,21,9,1,26,22,11,18,16,12,10,30,2,3,8,14,24,20});
 
         System.out.format("Solving a pancake pile of height %d.\n", root.getState().length);
 
@@ -47,17 +51,18 @@ public class RecursiveSolver {
         int maxBound = bound * 10;
 
         while (solutionNode == null) {
+            System.out.println("Searching with bound " + bound);
             SearchResult result = search(root, bound);
 
-            if (result.solutionNode != null) {
-                solutionNode = result.solutionNode;
+            if (result.getSolutionNode() != null) {
+                solutionNode = result.getSolutionNode();
             }
 
-            if (result.bound >= maxBound) {
+            if (result.getBound() >= maxBound) {
                 return null;
             }
 
-            bound = result.bound;
+            bound = result.getBound();
         }
 
         return solutionNode;
@@ -80,12 +85,12 @@ public class RecursiveSolver {
         for (Node successor : successors) {
             SearchResult result = search(successor, bound);
 
-            if (result.solutionNode != null) {
+            if (result.getSolutionNode() != null) {
                 return result;
             }
 
-            if (result.bound < min) {
-                min = result.bound;
+            if (result.getBound() < min) {
+                min = result.getBound();
             }
         }
 

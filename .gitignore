@@ -1,3 +1,13 @@
-.idea/
+# Build artifacts
 target/
-gradle/wrapper/
+bin/
+build/
+
+# Build tools
+.gradle/
+
+# IDE
+.idea/
+.settings/
+.classpath
+.project
