@@ -11,3 +11,5 @@ build/
 .settings/
 .classpath
 .project
+*.iws
+*.ipr
