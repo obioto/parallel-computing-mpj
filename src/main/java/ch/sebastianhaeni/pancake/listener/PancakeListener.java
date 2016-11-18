@@ -1,14 +1,15 @@
 package ch.sebastianhaeni.pancake.listener;
 
-import mpi.Request;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import mpi.Request;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.SLEEP_MILLIS;
 
 public abstract class PancakeListener extends Thread {
     private static final Logger LOG = LogManager.getLogger("PancakeListener");
-    protected final int worker;
+    private final int worker;
 
     private boolean stop;
 
@@ -25,7 +26,7 @@ public abstract class PancakeListener extends Thread {
         while (!stop) {
             listen();
         }
-        LOG.debug("Listener for worker {} terminated", worker);
+        LOG.debug("Listener for worker {} terminated", getWorker());
     }
 
     boolean block(Request request) {
@@ -43,4 +44,8 @@ public abstract class PancakeListener extends Thread {
     }
 
     protected abstract void listen();
+
+    public int getWorker() {
+        return worker;
+    }
 }

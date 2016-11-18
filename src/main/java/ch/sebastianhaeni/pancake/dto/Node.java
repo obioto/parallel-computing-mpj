@@ -9,6 +9,8 @@ import java.util.List;
  * A node in a search tree.
  */
 public class Node implements Serializable {
+    private static final long serialVersionUID = -8209803922325444946L;
+
     /**
      * The state behind this node.
      */

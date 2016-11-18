@@ -1,14 +1,15 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ch.sebastianhaeni.pancake.ParallelSolver;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
 import mpi.MPI;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 class Distributor extends Thread {
     private static final Logger LOG = LogManager.getLogger("Distributor");
@@ -44,10 +45,10 @@ class Distributor extends Thread {
                         return;
                     }
                     //noinspection ConstantConditions
-                    MPI.COMM_WORLD.Isend(new WorkPacket[]{work}, 0, 1, MPI.OBJECT, worker, Tags.WORK.tag());
+                    MPI.COMM_WORLD.Isend(new WorkPacket[] { work }, 0, 1, MPI.OBJECT, worker, Tags.WORK.tag());
                 }
 
-                if (idleWorkers.size() == 0) {
+                if (idleWorkers.isEmpty()) {
                     continue;
                 }
 

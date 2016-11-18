@@ -1,5 +1,14 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ch.sebastianhaeni.pancake.ParallelSolver;
 import ch.sebastianhaeni.pancake.dto.Node;
 import ch.sebastianhaeni.pancake.dto.SearchResult;
@@ -10,14 +19,6 @@ import ch.sebastianhaeni.pancake.listener.IdleListener;
 import ch.sebastianhaeni.pancake.listener.PancakeListener;
 import ch.sebastianhaeni.pancake.listener.ResultListener;
 import mpi.MPI;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class Controller implements IProcessor {
 
@@ -29,7 +30,7 @@ public class Controller implements IProcessor {
     private final LinkedBlockingQueue<WorkPacket> outstandingWork = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<SearchResult> results = new LinkedBlockingQueue<>();
     private final ArrayList<PancakeListener> listeners = new ArrayList<>();
-    private Distributor distributor;
+    private final Distributor distributor;
 
     public Controller(int[] initialState, int workerCount) {
         this.initialState = initialState;
@@ -42,6 +43,7 @@ public class Controller implements IProcessor {
         this.distributor = new Distributor(idleWorkers, outstandingWork, workers);
     }
 
+    @Override
     public void run() {
         initializeListeners();
 
@@ -64,7 +66,7 @@ public class Controller implements IProcessor {
     }
 
     private void cleanUp() {
-    	outstandingWork.clear();
+        outstandingWork.clear();
         distributor.stopDistributing();
 
         for (int worker : workers) {
@@ -116,13 +118,13 @@ public class Controller implements IProcessor {
                 int pancake = state[i];
                 currentSb.append(String.format("%02d", pancake));
                 if (previous != null && previous.getFlipPosition() - 1 == i) {
-                    currentSb.append("|");
+                    currentSb.append('|');
                 } else {
-                    currentSb.append(" ");
+                    currentSb.append(' ');
                 }
             }
 
-            sb.insert(0, currentSb.toString() + "\n");
+            sb.insert(0, currentSb.toString() + '\n');
             previous = current;
             current = current.getParent();
         }
@@ -176,8 +178,8 @@ public class Controller implements IProcessor {
         List<Node> successors = node.nextNodes();
 
         outstandingWork.addAll(successors.stream()
-                .map(successor -> new WorkPacket(successor, bound))
-                .collect(Collectors.toList()));
+            .map(successor -> new WorkPacket(successor, bound))
+            .collect(Collectors.toList()));
 
         if (!distributor.isStarted()) {
             distributor.start();
@@ -187,8 +189,8 @@ public class Controller implements IProcessor {
         int min = Integer.MAX_VALUE;
 
         while ((result = results.poll(1, TimeUnit.SECONDS)) != null
-                || min == Integer.MAX_VALUE
-                || (workers.length - idleWorkers.size() > 0)) {
+            || min == Integer.MAX_VALUE
+            || (workers.length - idleWorkers.size() > 0)) {
 
             if (result == null) {
                 continue;
