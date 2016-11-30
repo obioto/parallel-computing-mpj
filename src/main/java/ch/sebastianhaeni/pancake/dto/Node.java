@@ -1,9 +1,7 @@
 package ch.sebastianhaeni.pancake.dto;
 
 import java.io.Serializable;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Stack;
 
 /**
  * A node in a search tree.
@@ -25,80 +23,90 @@ public class Node implements Serializable {
      * The parent node. This is only used to figure out the solution path after the solution has been found.
      */
     private final Node parent;
+
+    /**
+     * Position this node's parent was flipped at.
+     */
     private final int flipPosition;
 
+    private Stack<Node> children = new Stack<>();
+
+    /**
+     * Pancake pile size.
+     */
+    private final int size;
+    private int distance;
+
     public Node(int[] state) {
-        this(state, 0, null, -1);
+        this(state, 0, null, -1, 0);
     }
 
-    private Node(int[] state, int depth, Node parent, int flipPosition) {
+    private Node(int[] state, int depth, Node parent, int flipPosition,int distance) {
         this.state = state;
         this.depth = depth;
         this.parent = parent;
         this.flipPosition = flipPosition;
+        this.size = state.length;
+        this.distance=distance;
     }
 
-    public int getOptimisticDistanceToSolution() {
-        int distance = 0;
-        int current = 1;
+    public void calcDistance() {
+        distance = 0;
 
-        for (int i = 1; i < state.length; i++) {
-            int pancake = state[i];
-            if (Math.abs(pancake - current) != 1) {
+        for (int i = 0; i < size - 1; i++) {
+            if (Math.abs(state[i] - state[i + 1]) > 1) {
                 distance++;
             }
-            current = pancake;
         }
-
-        // 1.07 from https://en.wikipedia.org/wiki/Pancake_sorting
-        return (int) (distance * 1.07);
     }
 
     public boolean isSolution() {
-        int current = 1;
-
-        for (int i = 1; i < state.length; i++) {
-            int pancake = state[i];
-            if (pancake - current != 1) {
+        for (int i = 0; i < size - 1; i++) {
+            if (state[i] != state[i + 1] - 1) {
                 return false;
             }
-            current = pancake;
         }
 
         return true;
     }
 
-    public List<Node> nextNodes() {
-        AbstractList<Node> list = new ArrayList<>();
-
-        for (int i = 1; i < state.length; i++) {
-            int flipPosition = i + 1;
-            if (flipPosition != this.flipPosition) {
-                Node flip = flip(flipPosition);
-                list.add(flip);
+    public void nextNodes() {
+        for (int i = 2; i < size; i++) {
+            if (Math.abs(state[i - 1] - state[i]) > 1) {
+                if (Math.abs(state[i] - state[0]) > 1) {
+                    children.push(flip(i, distance));
+                } else {
+                    children.push(flip(i, distance - 1));
+                }
             }
         }
-
-        return list;
     }
 
     /**
      * Flips the prefix at the defined flip position.
      *
      * @param flipPosition the position where the state shall be reversed
+     * @param distance predetermined optimistic distance
      * @return prefix reversed state
      */
-    Node flip(int flipPosition) {
+    Node flip(int flipPosition, int distance) {
 
-        int[] flipped = new int[state.length];
+        int[] flipped = new int[size];
 
         for (int i = 0; i < flipPosition; i++) {
             flipped[i] = state[flipPosition - i - 1];
         }
 
-        System.arraycopy(state, flipPosition, flipped, flipPosition, state.length - flipPosition);
+        System.arraycopy(state, flipPosition, flipped, flipPosition, size - flipPosition);
 
-        return new Node(flipped, getDepth() + 1, this, flipPosition);
+        return new Node(flipped, getDepth() + 1, this, flipPosition, distance);
+    }
+
+    public Node augment() {
+        int[] augmentedState = new int[size + 1];
+        System.arraycopy(state, 0, augmentedState, 0, size);
+        augmentedState[size] = size + 1;
+        return new Node(augmentedState);
     }
 
     public int getDepth() {
@@ -115,5 +123,13 @@ public class Node implements Serializable {
 
     public int getFlipPosition() {
         return flipPosition;
+    }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public Stack<Node> getChildren() {
+        return children;
     }
 }

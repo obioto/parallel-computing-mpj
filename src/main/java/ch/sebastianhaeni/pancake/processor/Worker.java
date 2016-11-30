@@ -1,6 +1,7 @@
 package ch.sebastianhaeni.pancake.processor;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -91,7 +92,7 @@ public class Worker implements IProcessor {
 
     private SearchResult compute(Node node, int bound) {
         computeCount++;
-        int newBound = node.getDepth() + node.getOptimisticDistanceToSolution();
+        int newBound = node.getDepth() + node.getDistance();
 
         if (newBound > bound) {
             return new SearchResult(newBound);
@@ -101,7 +102,8 @@ public class Worker implements IProcessor {
             return new SearchResult(node);
         }
 
-        List<Node> successors = node.nextNodes();
+//        List<Node> successors = node.nextNodes();
+        List<Node> successors = new ArrayList<>();
 
         if (splitCommand != null && splitCommand.Test() != null) {
             listenToSplitCommand();

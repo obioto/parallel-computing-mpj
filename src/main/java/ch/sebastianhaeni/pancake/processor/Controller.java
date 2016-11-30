@@ -138,7 +138,7 @@ public class Controller implements IProcessor {
         }
 
         Node solutionNode = null;
-        int bound = root.getOptimisticDistanceToSolution();
+        int bound = root.getDistance();
         int maxBound = bound * 2;
 
         while (solutionNode == null) {
@@ -165,7 +165,7 @@ public class Controller implements IProcessor {
     }
 
     private SearchResult search(Node node, int bound) throws InterruptedException {
-        int newBound = node.getDepth() + node.getOptimisticDistanceToSolution();
+        int newBound = node.getDepth() + node.getDistance();
 
         if (newBound > bound) {
             return new SearchResult(newBound);
@@ -175,11 +175,11 @@ public class Controller implements IProcessor {
             return new SearchResult(node);
         }
 
-        List<Node> successors = node.nextNodes();
-
-        outstandingWork.addAll(successors.stream()
-            .map(successor -> new WorkPacket(successor, bound))
-            .collect(Collectors.toList()));
+//        List<Node> successors = node.nextNodes();
+//
+//        outstandingWork.addAll(successors.stream()
+//            .map(successor -> new WorkPacket(successor, bound))
+//            .collect(Collectors.toList()));
 
         if (!distributor.isStarted()) {
             distributor.start();
