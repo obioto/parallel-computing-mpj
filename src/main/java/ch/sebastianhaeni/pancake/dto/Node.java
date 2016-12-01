@@ -20,16 +20,6 @@ public class Node implements Serializable {
     private final int depth;
 
     /**
-     * The parent node. This is only used to figure out the solution path after the solution has been found.
-     */
-    private final Node parent;
-
-    /**
-     * Position this node's parent was flipped at.
-     */
-    private final int flipPosition;
-
-    /**
      * Stack of child nodes generated from this node.
      */
     private final Stack<Node> children = new Stack<>();
@@ -41,16 +31,14 @@ public class Node implements Serializable {
     private int distance;
 
     public Node(int[] state) {
-        this(state, 0, null, -1, 0);
+        this(state, 0, 0);
     }
 
-    private Node(int[] state, int depth, Node parent, int flipPosition,int distance) {
+    private Node(int[] state, int depth, int distance) {
         this.state = state;
         this.depth = depth;
-        this.parent = parent;
-        this.flipPosition = flipPosition;
         this.size = state.length;
-        this.distance=distance;
+        this.distance = distance;
     }
 
     public void calcDistance() {
@@ -63,15 +51,6 @@ public class Node implements Serializable {
         }
     }
 
-    public boolean isSolution() {
-        for (int i = 0; i < size - 1; i++) {
-            if (state[i] != state[i + 1] - 1) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     public void nextNodes() {
         for (int i = 2; i < size; i++) {
@@ -89,7 +68,7 @@ public class Node implements Serializable {
      * Flips the prefix at the defined flip position.
      *
      * @param flipPosition the position where the state shall be reversed
-     * @param distance predetermined optimistic distance
+     * @param distance     predetermined optimistic distance
      * @return prefix reversed state
      */
     Node flip(int flipPosition, int distance) {
@@ -102,7 +81,7 @@ public class Node implements Serializable {
 
         System.arraycopy(state, flipPosition, flipped, flipPosition, size - flipPosition);
 
-        return new Node(flipped, getDepth() + 1, this, flipPosition, distance);
+        return new Node(flipped, getDepth() + 1, distance);
     }
 
     public Node augment() {
@@ -120,13 +99,6 @@ public class Node implements Serializable {
         return state;
     }
 
-    public Node getParent() {
-        return parent;
-    }
-
-    public int getFlipPosition() {
-        return flipPosition;
-    }
 
     public int getDistance() {
         return distance;

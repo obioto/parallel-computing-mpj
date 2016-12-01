@@ -1,29 +1,28 @@
 package ch.sebastianhaeni.pancake.processor;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-
+import ch.sebastianhaeni.pancake.dto.Node;
+import ch.sebastianhaeni.pancake.dto.Tags;
+import ch.sebastianhaeni.pancake.dto.WorkPacket;
+import ch.sebastianhaeni.pancake.util.IntListener;
+import ch.sebastianhaeni.pancake.util.Partition;
+import ch.sebastianhaeni.pancake.util.Status;
+import ch.sebastianhaeni.pancake.util.WorkPacketListener;
+import mpi.MPI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ch.sebastianhaeni.pancake.ParallelSolver;
-import ch.sebastianhaeni.pancake.dto.Node;
-import ch.sebastianhaeni.pancake.dto.SearchResult;
-import ch.sebastianhaeni.pancake.dto.Tags;
-import ch.sebastianhaeni.pancake.dto.WorkPacket;
-import mpi.MPI;
-import mpi.Request;
+import java.util.Stack;
 
-import static ch.sebastianhaeni.pancake.ParallelSolver.SLEEP_MILLIS;
+import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
 
 public class Worker implements IProcessor {
 
+    private static final int INITIAL_WORK_DEPTH = 100;
     private final Logger log;
-    private Request splitCommand = null;
-    private long idleTime = 0;
-    private Request killCommand = null;
-    private int computeCount;
+    private Status status = new Status();
+    private Stack<Node> stack = new Stack<>();
+    private int bound;
+    private int candidateBound;
 
     public Worker(int rank) {
         log = LogManager.getLogger("Worker(" + rank + ')');
@@ -31,140 +30,61 @@ public class Worker implements IProcessor {
 
     @Override
     public void run() {
-        killCommand = MPI.COMM_WORLD.Irecv(ParallelSolver.EMPTY_BUFFER, 0, 0, MPI.INT, ParallelSolver.CONTROLLER_RANK, Tags.KILL.tag());
-        listenToSplitCommand();
+        WorkPacketListener.create(Tags.WORK, (source, result) -> handleWork(result), status);
+        IntListener.create(Tags.KILL, (source, result) -> status.done(), status);
+        IntListener.create(Tags.SPLIT, (source, result) -> splitAndSend(result), status);
 
-        long startRun = System.currentTimeMillis();
-
-        while (killCommand.Test() == null) {
-            WorkPacket work = getWork();
-
-            if (work == null) {
-                return;
-            }
-
-            Node node = work.getNode();
-            int bound = work.getBound();
-
-            SearchResult result = compute(node, bound);
-            sendResult(result);
+        while (stack.isEmpty() || (stack.peek().getDistance() != 0 && !status.isDone())) {
+            solve();
         }
 
-        long endRun = System.currentTimeMillis();
-        long passedTime = endRun - startRun;
-        DecimalFormat df = new DecimalFormat("###.##");
-
-        String timeUse = df.format((1.0f - ((float) idleTime / passedTime)) * 100);
-
-        log.info("Done. Computed {} nodes. Efficiency: {}%", computeCount, timeUse);
+        Stack[] result = new Stack[1];
+        result[0] = stack;
+        MPI.COMM_WORLD.Isend(result, 0, 1, MPI.OBJECT, CONTROLLER_RANK, Tags.RESULT.tag());
     }
 
-    private WorkPacket getWork() {
-        WorkPacket[] work = new WorkPacket[1];
-
-        MPI.COMM_WORLD.Isend(ParallelSolver.EMPTY_BUFFER, 0, 0, MPI.INT, ParallelSolver.CONTROLLER_RANK, Tags.IDLE.tag());
-
-        long start = System.currentTimeMillis();
-        Request workRequest = MPI.COMM_WORLD.Irecv(work, 0, 1, MPI.OBJECT, ParallelSolver.CONTROLLER_RANK, Tags.WORK.tag());
-        while (workRequest.Test() == null) {
-            if (killCommand.Test() != null) {
-                return null;
-            }
-            try {
-                Thread.sleep(SLEEP_MILLIS);
-            } catch (InterruptedException e) {
-                log.error("Interrupted", e);
-            }
-        }
-        long end = System.currentTimeMillis();
-
-        long currentIdleTime = end - start;
-        idleTime += currentIdleTime;
-        if (currentIdleTime > 5) {
-            log.warn("waited for {}ms", currentIdleTime);
-        }
-        return work[0];
+    private void handleWork(WorkPacket result) {
+        stack = result.getStack();
+        bound = result.getBound();
+        candidateBound = result.getCandidateBound();
+        log.info("got work with stack size {}", stack.size());
     }
 
-    private void listenToSplitCommand() {
-        splitCommand = MPI.COMM_WORLD.Irecv(ParallelSolver.EMPTY_BUFFER, 0, 0, MPI.INT, ParallelSolver.CONTROLLER_RANK, Tags.SPLIT.tag());
-    }
+    private void solve() {
+        while (!stack.isEmpty() && stack.peek().getDistance() != 0 && stack.peek().getDepth() < INITIAL_WORK_DEPTH) {
+            if (stack.peek().getDistance() + stack.peek().getDepth() > bound) {
+                int stateBound = stack.peek().getDepth() + stack.peek().getDistance();
+                candidateBound = stateBound < candidateBound ? stateBound : candidateBound;
+                stack.pop();
+            } else if (stack.peek().getChildren().empty()) {
+                if (stack.peek().getDepth() == 0) {
 
-    private SearchResult compute(Node node, int bound) {
-        computeCount++;
-        int newBound = node.getDepth() + node.getDistance();
+                    int[] boundBuf = new int[1];
+                    boundBuf[0] = candidateBound;
 
-        if (newBound > bound) {
-            return new SearchResult(newBound);
-        }
-
-        if (node.isSolution()) {
-            return new SearchResult(node);
-        }
-
-//        List<Node> successors = node.nextNodes();
-        List<Node> successors = new ArrayList<>();
-
-        if (splitCommand != null && splitCommand.Test() != null) {
-            listenToSplitCommand();
-            WorkPacket[] workPackets = splitWork(bound, successors);
-            sendSplitWork(workPackets);
-        }
-
-        int min = Integer.MAX_VALUE;
-        for (int i = 0; i < successors.size(); i++) {
-
-            if (splitCommand != null && splitCommand.Test() != null) {
-                successors = successors.subList(i, successors.size());
-                listenToSplitCommand();
-                WorkPacket[] workPackets = splitWork(bound, successors);
-                sendSplitWork(workPackets);
-                i = 0;
-            }
-
-            if (killCommand.Test() != null) {
-                return null;
-            }
-
-            Node successor = successors.get(i);
-            SearchResult result = compute(successor, bound);
-            if (result == null) {
-                return null;
-            }
-            if (result.getSolutionNode() != null) {
-                return result;
-            }
-            if (result.getBound() < min) {
-                min = result.getBound();
+                    log.info("Sending new bound {}", candidateBound);
+                    MPI.COMM_WORLD.Isend(boundBuf, 0, 1, MPI.INT, CONTROLLER_RANK, Tags.IDLE.tag());
+                    return;
+                } else {
+                    stack.pop();
+                }
+            } else {
+                log.info("Doing work");
+                stack.push(stack.peek().getChildren().pop());
+                stack.peek().nextNodes();
             }
         }
-
-        return new SearchResult(min);
     }
 
-    WorkPacket[] splitWork(int bound, List<Node> successors) {
-        int halfSize = successors.size() / 2;
-        WorkPacket[] splitBuffer = new WorkPacket[halfSize];
-        for (int i = 0; i < halfSize; i++) {
-            splitBuffer[i] = new WorkPacket(successors.get(i % 2), bound);
-            successors.remove(i % 2);
-        }
+    private void splitAndSend(Integer result) {
+        Partition partition = new Partition(stack, 2);
+        stack = partition.get(0);
 
-        return splitBuffer;
+        WorkPacket packet = new WorkPacket(bound, candidateBound);
+        packet.setStack(partition.get(1));
+
+        MPI.COMM_WORLD.Isend(new WorkPacket[] { packet }, 0, 1, MPI.OBJECT, result, Tags.WORK.tag());
     }
 
-    private void sendSplitWork(WorkPacket[] splitBuffer) {
-        int[] lengthBuf = new int[1];
-        lengthBuf[0] = splitBuffer.length;
-        MPI.COMM_WORLD.Send(lengthBuf, 0, 1, MPI.INT, ParallelSolver.CONTROLLER_RANK, Tags.EXCESS_LENGTH.tag());
-        MPI.COMM_WORLD.Isend(splitBuffer, 0, splitBuffer.length, MPI.OBJECT, ParallelSolver.CONTROLLER_RANK, Tags.EXCESS.tag());
-    }
 
-    private void sendResult(SearchResult searchResult) {
-        if (searchResult == null) {
-            // it's null, guess we got the kill command
-            return;
-        }
-        MPI.COMM_WORLD.Isend(new SearchResult[] { searchResult }, 0, 1, MPI.OBJECT, ParallelSolver.CONTROLLER_RANK, Tags.RESULT.tag());
-    }
 }

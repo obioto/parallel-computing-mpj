@@ -28,18 +28,6 @@ public class NodeTest {
     }
 
     @Test
-    public void testIsSolution1() {
-        Node node = new Node(new int[]{1, 2, 3});
-        assertTrue(node.isSolution());
-    }
-
-    @Test
-    public void testIsSolution2() {
-        Node node = new Node(new int[]{2, 1, 3});
-        assertFalse(node.isSolution());
-    }
-
-    @Test
     public void testNextNodes() {
         Node node = new Node(new int[]{4, 2, 5, 1, 3});
         node.nextNodes();

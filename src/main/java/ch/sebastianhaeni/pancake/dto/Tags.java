@@ -27,15 +27,9 @@ public enum Tags {
     SPLIT,
 
     /**
-     * The worker passes the excess work back to the controller which then can redistribute it.
+     * Sent when the worker is working again.
      */
-    EXCESS,
-
-    /**
-     * When the worker passes the excess work back to the controller, the controller doesn't know how much work is
-     * sent back, this message contains the length of the excess work.
-     */
-    EXCESS_LENGTH;
+    WORKING;
 
     /**
      * Create an integer for MPI.
