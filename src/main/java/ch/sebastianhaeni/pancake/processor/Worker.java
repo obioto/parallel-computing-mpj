@@ -19,7 +19,7 @@ import static ch.sebastianhaeni.pancake.ParallelSolver.SLEEP_MILLIS;
 
 public class Worker implements IProcessor {
 
-    private Logger log;
+    private final Logger log;
     private Request splitCommand = null;
     private long idleTime = 0;
     private Request killCommand = null;

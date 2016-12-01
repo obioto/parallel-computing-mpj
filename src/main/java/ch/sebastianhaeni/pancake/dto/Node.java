@@ -29,7 +29,10 @@ public class Node implements Serializable {
      */
     private final int flipPosition;
 
-    private Stack<Node> children = new Stack<>();
+    /**
+     * Stack of child nodes generated from this node.
+     */
+    private final Stack<Node> children = new Stack<>();
 
     /**
      * Pancake pile size.
