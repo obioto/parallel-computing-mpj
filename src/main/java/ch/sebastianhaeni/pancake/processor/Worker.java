@@ -19,7 +19,7 @@ public class Worker implements IProcessor {
 
     private static final int INITIAL_WORK_DEPTH = 100;
     private final Logger log;
-    private Status status = new Status();
+    private final Status status = new Status();
     private Stack<Node> stack = new Stack<>();
     private int bound;
     private int candidateBound;
@@ -76,7 +76,7 @@ public class Worker implements IProcessor {
         }
     }
 
-    private void splitAndSend(Integer result) {
+    private void splitAndSend(int result) {
         Partition partition = new Partition(stack, 2);
         stack = partition.get(0);
 

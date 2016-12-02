@@ -1,19 +1,21 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import java.util.Arrays;
+import java.util.Stack;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.google.common.primitives.Ints;
+
 import ch.sebastianhaeni.pancake.dto.Node;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
 import ch.sebastianhaeni.pancake.util.IntListener;
 import ch.sebastianhaeni.pancake.util.Partition;
 import ch.sebastianhaeni.pancake.util.Status;
-import com.google.common.primitives.Ints;
 import mpi.MPI;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.Arrays;
-import java.util.Stack;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class Controller implements IProcessor {
 
@@ -23,11 +25,12 @@ public class Controller implements IProcessor {
     private final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
     private final Stack<Node> stack = new Stack<>();
     private final int[] workers;
-    private int workerCount;
+    private final int workerCount;
     private final int[] initialState;
+    private final Status status = new Status();
+
     private int candidateBound;
     private int bound;
-    private Status status = new Status();
 
     public Controller(int[] initialState, int workerCount) {
         this.initialState = initialState;
