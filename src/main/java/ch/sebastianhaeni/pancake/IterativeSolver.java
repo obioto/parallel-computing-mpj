@@ -53,7 +53,7 @@ public final class IterativeSolver {
         int bound = root.getDistance();
         int candidateBound = Integer.MAX_VALUE;
 
-        while (NODES.peek().getDistance() != 0) {
+        while (NODES.peek().getDistance() > 0) {
             if (NODES.peek().getDistance() + NODES.peek().getDepth() > bound) {
                 int stateBound = NODES.peek().getDepth() + NODES.peek().getDistance();
                 candidateBound = stateBound < candidateBound ? stateBound : candidateBound;

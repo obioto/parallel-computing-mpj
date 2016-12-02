@@ -20,7 +20,7 @@ import mpi.MPI;
 public class Controller implements IProcessor {
 
     private static final Logger LOG = LogManager.getLogger("Controller");
-    private static final int INITIAL_WORK_DEPTH = 20;
+    private static final int INITIAL_WORK_DEPTH = 50;
 
     private final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
     private final Stack<Node> stack = new Stack<>();
@@ -68,6 +68,7 @@ public class Controller implements IProcessor {
         root.augment();
 
         stack.push(root);
+        stack.peek().calcDistance();
         stack.peek().nextNodes();
 
         initialWork();
@@ -123,7 +124,7 @@ public class Controller implements IProcessor {
         String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
 
         LOG.info("Took {}", time);
-        LOG.info("Found solution after {} flips.", solution.size());
+        LOG.info("Stack size: {}", solution.size());
 
         StringBuilder sb = new StringBuilder();
 
@@ -139,7 +140,8 @@ public class Controller implements IProcessor {
         candidateBound = Integer.MAX_VALUE;
 
         int i = 0;
-        while (stack.peek().getDistance() != 0 && i < INITIAL_WORK_DEPTH) {
+        LOG.info("Starting at distance {}", stack.peek().getDistance());
+        while (stack.peek().getDistance() > 0 && i < INITIAL_WORK_DEPTH) {
             i++;
             if (stack.peek().getDistance() + stack.peek().getDepth() > bound) {
                 int stateBound = stack.peek().getDepth() + stack.peek().getDistance();
