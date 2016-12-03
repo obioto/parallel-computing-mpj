@@ -65,11 +65,10 @@ public class Worker implements IProcessor {
                     log.info("Sending new bound {}", candidateBound);
                     MPI.COMM_WORLD.Isend(boundBuf, 0, 1, MPI.INT, CONTROLLER_RANK, Tags.IDLE.tag());
                     return;
-                } else {
-                    stack.pop();
                 }
+                stack.pop();
             } else {
-                log.info("Doing work");
+                //log.info("Doing work");
                 stack.push(stack.peek().getChildren().pop());
                 stack.peek().nextNodes();
             }

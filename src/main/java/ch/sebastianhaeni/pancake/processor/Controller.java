@@ -20,7 +20,7 @@ import mpi.MPI;
 public class Controller implements IProcessor {
 
     private static final Logger LOG = LogManager.getLogger("Controller");
-    private static final int INITIAL_WORK_DEPTH = 50;
+    private static final int INITIAL_WORK_DEPTH = 1000;
 
     private final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
     private final Stack<Node> stack = new Stack<>();
@@ -83,7 +83,8 @@ public class Controller implements IProcessor {
         for (int i = 0; i < workerCount; i++) {
             packet.setStack(partition.get(i));
             LOG.info("sending stack of size {} to {}", packet.getStack().size(), workers[i]);
-            MPI.COMM_WORLD.Isend(packetBuf, 0, 1, MPI.OBJECT, workers[i], Tags.WORK.tag());
+            MPI.COMM_WORLD.Send(packetBuf, 0, 1, MPI.OBJECT, workers[i], Tags.WORK.tag());
+            LOG.info("sent to {}", workers[i]);
         }
     }
 
@@ -155,6 +156,7 @@ public class Controller implements IProcessor {
                     stack.peek().nextNodes();
                 } else {
                     stack.pop();
+                    LOG.info("pop, nothing left to do");
                 }
             } else {
                 stack.push(stack.peek().getChildren().pop());

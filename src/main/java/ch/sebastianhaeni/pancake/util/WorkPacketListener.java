@@ -1,13 +1,14 @@
 package ch.sebastianhaeni.pancake.util;
 
-import ch.sebastianhaeni.pancake.dto.Tags;
-import ch.sebastianhaeni.pancake.dto.WorkPacket;
-import mpi.MPI;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import ch.sebastianhaeni.pancake.dto.Tags;
+import ch.sebastianhaeni.pancake.dto.WorkPacket;
+import mpi.MPI;
 
 public class WorkPacketListener {
     private static final Logger LOG = LogManager.getLogger("WorkPacketListener");
@@ -31,7 +32,12 @@ public class WorkPacketListener {
     private void listen() {
         Object[] packetBuf = new Object[1];
         CompletableFuture
-            .supplyAsync(() -> MPI.COMM_WORLD.Recv(packetBuf, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, tag.tag()))
+            .supplyAsync(() -> {
+                LOG.info("Setting up work listener for worker({})", MPI.COMM_WORLD.Rank());
+                mpi.Status recv = MPI.COMM_WORLD.Recv(packetBuf, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, tag.tag());
+                LOG.info("Received work");
+                return recv;
+            })
             .thenAccept(response -> listenCallback(response.source, packetBuf[0]));
     }
 
@@ -40,7 +46,9 @@ public class WorkPacketListener {
             return;
         }
 
-        consumer.accept(source, (WorkPacket) result);
+        WorkPacket work = (WorkPacket) result;
+        LOG.info("received a stack of work {}", work.getStack().size());
+        consumer.accept(source, work);
         listen();
     }
 
