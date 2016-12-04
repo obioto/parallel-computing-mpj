@@ -1,8 +1,8 @@
 package ch.sebastianhaeni.pancake.util;
 
-import java.util.Stack;
-
 import ch.sebastianhaeni.pancake.dto.Node;
+
+import java.util.Stack;
 
 public class Partition {
     private final Stack<Node> stack;
@@ -23,7 +23,7 @@ public class Partition {
         return nodes;
     }
 
-    public int size() {
+    int size() {
         return stackCount;
     }
 }

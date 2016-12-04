@@ -1,21 +1,19 @@
 package ch.sebastianhaeni.pancake.processor;
 
-import java.util.Arrays;
-import java.util.Stack;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.google.common.primitives.Ints;
-
 import ch.sebastianhaeni.pancake.dto.Node;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
 import ch.sebastianhaeni.pancake.util.IntListener;
 import ch.sebastianhaeni.pancake.util.Partition;
 import ch.sebastianhaeni.pancake.util.Status;
+import com.google.common.primitives.Ints;
 import mpi.MPI;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.Arrays;
+import java.util.Stack;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Controller implements IProcessor {
 
@@ -68,7 +66,6 @@ public class Controller implements IProcessor {
         root.augment();
 
         stack.push(root);
-        stack.peek().calcDistance();
         stack.peek().nextNodes();
 
         initialWork();
@@ -89,8 +86,8 @@ public class Controller implements IProcessor {
     }
 
     private void initializeListeners() {
-        IntListener.create(Tags.IDLE, this::handleIdleWorker, status);
-        IntListener.create(Tags.WORKING, (source, result) -> idleWorkers.remove(source), status);
+        (new Thread(new IntListener(Tags.IDLE, this::handleIdleWorker, status))).start();
+        (new Thread(new IntListener(Tags.WORKING, (source, result) -> idleWorkers.remove(source), status))).start();
     }
 
     private void handleIdleWorker(int source, int result) {

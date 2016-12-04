@@ -31,7 +31,14 @@ public class Node implements Serializable {
     private int distance;
 
     public Node(int[] state) {
-        this(state, 0, 0);
+        this(state, 0);
+    }
+
+    private Node(int[] state, int depth) {
+        this.state = state;
+        this.depth = depth;
+        this.size = state.length;
+        calcDistance();
     }
 
     private Node(int[] state, int depth, int distance) {
@@ -51,7 +58,6 @@ public class Node implements Serializable {
         }
     }
 
-
     public void nextNodes() {
         for (int i = 2; i < size; i++) {
             if (Math.abs(state[i - 1] - state[i]) > 1) {
@@ -68,7 +74,7 @@ public class Node implements Serializable {
      * Flips the prefix at the defined flip position.
      *
      * @param flipPosition the position where the state shall be reversed
-     * @param distance     predetermined optimistic distance
+     * @param distance     predetermined optimistic distance for the new nodes
      * @return prefix reversed state
      */
     Node flip(int flipPosition, int distance) {
@@ -99,7 +105,6 @@ public class Node implements Serializable {
         return state;
     }
 
-
     public int getDistance() {
         return distance;
     }
@@ -107,4 +112,5 @@ public class Node implements Serializable {
     public Stack<Node> getChildren() {
         return children;
     }
+
 }

@@ -2,42 +2,37 @@ package ch.sebastianhaeni.pancake.util;
 
 import ch.sebastianhaeni.pancake.dto.Tags;
 import mpi.MPI;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-public class IntListener {
+public class IntListener implements Runnable {
+    private static final Logger LOG = LogManager.getLogger("WorkPacketListener");
 
     private final Tags tag;
     private final BiConsumer<Integer, Integer> consumer;
     private final Status status;
 
-    private IntListener(Tags tag, BiConsumer<Integer, Integer> consumer, Status status) {
+    public IntListener(Tags tag, BiConsumer<Integer, Integer> consumer, Status status) {
         this.tag = tag;
         this.consumer = consumer;
         this.status = status;
-
-        listen();
     }
 
-    public static void create(Tags tag, BiConsumer<Integer, Integer> consumer, Status status) {
-        new IntListener(tag, consumer, status);
-    }
-
-    private void listen() {
+    @Override
+    public void run() {
         int[] result = new int[1];
-        CompletableFuture
-            .supplyAsync(() -> MPI.COMM_WORLD.Recv(result, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, tag.tag()))
-            .thenAccept(response -> listenCallback(response.source, result[0]));
-    }
+        mpi.Status response = MPI.COMM_WORLD.Recv(result, 0, 1, MPI.INT, MPI.ANY_SOURCE, tag.tag());
 
-    private void listenCallback(int source, int result) {
+        LOG.info("Got {} message for worker({})", tag.name(), MPI.COMM_WORLD.Rank());
+
         if (status.isDone()) {
             return;
         }
 
-        consumer.accept(source, result);
-        listen();
+        consumer.accept(response.source, result[0]);
+        (new Thread(new IntListener(tag, consumer, status))).start();
     }
 
 }

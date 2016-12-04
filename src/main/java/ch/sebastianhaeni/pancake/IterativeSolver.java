@@ -47,7 +47,6 @@ public final class IterativeSolver {
     private static void solve(Node root) {
         root = root.augment();
         NODES.push(root);
-        NODES.peek().calcDistance();
         NODES.peek().nextNodes();
 
         int bound = root.getDistance();
