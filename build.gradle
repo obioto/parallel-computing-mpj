@@ -16,15 +16,13 @@ repositories {
 
 dependencies {
     compile mpjJar
-    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.7'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
-    compile group: 'com.google.guava', name: 'guava', version: '19.0'
+
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
 run {
     main = 'runtime.starter.MPJRun'
     classpath = mpjStarter
-    args mainClassName, '-cp', mpjClasspath.asPath, '-np', 4
+    args mainClassName, '-cp', mpjClasspath.asPath, '-np', 5
     dependsOn classes
 }

@@ -24,12 +24,7 @@ public enum Tags {
     /**
      * The controller commands the worker to split it's work and send back half of it.
      */
-    SPLIT,
-
-    /**
-     * Sent when the worker is working again.
-     */
-    WORKING;
+    SPLIT;
 
     /**
      * Create an integer for MPI.

@@ -6,19 +6,17 @@ import ch.sebastianhaeni.pancake.dto.WorkPacket;
 import ch.sebastianhaeni.pancake.util.IntListener;
 import ch.sebastianhaeni.pancake.util.Partition;
 import ch.sebastianhaeni.pancake.util.Status;
-import com.google.common.primitives.Ints;
 import mpi.MPI;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Stack;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
+
 public class Controller implements IProcessor {
 
-    private static final Logger LOG = LogManager.getLogger("Controller");
-    private static final int INITIAL_WORK_DEPTH = 1000;
+    private static final int INITIAL_WORK_DEPTH = 10000;
 
     private final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
     private final Stack<Node> stack = new Stack<>();
@@ -28,7 +26,8 @@ public class Controller implements IProcessor {
     private final Status status = new Status();
 
     private int candidateBound;
-    private int bound;
+    private int bound = -1;
+    private int lastIncrease = -1;
 
     public Controller(int[] initialState, int workerCount) {
         this.initialState = initialState;
@@ -43,14 +42,17 @@ public class Controller implements IProcessor {
     @Override
     public void run() {
         initializeListeners();
-        LOG.info("Solving a pancake pile in parallel of height {}.", initialState.length);
+        System.out.printf("Solving a pancake pile in parallel of height %s.\n", initialState.length);
 
         // Start solving
         long start = System.currentTimeMillis();
 
-        solve();
+        if (solve()) {
+            long end = System.currentTimeMillis();
+            finish(stack, end - start);
+            return;
+        }
 
-        //noinspection unchecked
         Stack<Node>[] solution = new Stack[1];
         MPI.COMM_WORLD.Recv(solution, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, Tags.RESULT.tag());
         status.done();
@@ -58,19 +60,23 @@ public class Controller implements IProcessor {
         long end = System.currentTimeMillis();
         // End solving
 
-        displaySolution(solution[0], end - start);
+        finish(solution[0], end - start);
     }
 
-    private void solve() {
+    private boolean solve() {
         Node root = new Node(initialState);
-        root.augment();
+        root = root.augment();
 
         stack.push(root);
         stack.peek().nextNodes();
 
         initialWork();
 
-        LOG.info("Done some initial work with stack size of {}", stack.size());
+        if (stack.peek().getDistance() == 0) {
+            return true;
+        }
+
+        System.out.printf("Bound: %d\n", bound);
 
         Partition partition = new Partition(stack, workerCount);
         WorkPacket packet = new WorkPacket(bound, candidateBound);
@@ -79,81 +85,90 @@ public class Controller implements IProcessor {
 
         for (int i = 0; i < workerCount; i++) {
             packet.setStack(partition.get(i));
-            LOG.info("sending stack of size {} to {}", packet.getStack().size(), workers[i]);
-            MPI.COMM_WORLD.Send(packetBuf, 0, 1, MPI.OBJECT, workers[i], Tags.WORK.tag());
-            LOG.info("sent to {}", workers[i]);
+            MPI.COMM_WORLD.Isend(packetBuf, 0, 1, MPI.OBJECT, workers[i], Tags.WORK.tag());
         }
+
+        stack.clear();
+
+        return false;
     }
 
     private void initializeListeners() {
-        (new Thread(new IntListener(Tags.IDLE, this::handleIdleWorker, status))).start();
-        (new Thread(new IntListener(Tags.WORKING, (source, result) -> idleWorkers.remove(source), status))).start();
+        for (int worker : workers) {
+            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker))).start();
+        }
     }
 
-    private void handleIdleWorker(int source, int result) {
+    private void handleIdle(int source, int result) {
         idleWorkers.add(source);
 
+        if (result > bound) {
+            bound = result;
+        }
+
         if (idleWorkers.size() == workerCount) {
-            increaseBound();
-            return;
-        }
+            idleWorkers.clear();
 
-        candidateBound = result < candidateBound ? result : candidateBound;
-
-        int friendWorker = workers[(Ints.indexOf(workers, source) + 1) % workerCount];
-
-        if (!idleWorkers.contains(friendWorker)) {
-            int[] receiver = new int[1];
-            receiver[0] = source;
-            MPI.COMM_WORLD.Isend(receiver, 0, 1, MPI.INT, friendWorker, Tags.SPLIT.tag());
+            if (lastIncrease == bound) {
+                return;
+            }
+            lastIncrease = bound;
+            (new Thread(this::solve)).start();
         }
     }
 
-    private void increaseBound() {
-        LOG.info("Increasing bound to {}", candidateBound);
-        solve();
-    }
-
-    private void displaySolution(Stack<Node> solution, long millis) {
+    private void finish(Stack<Node> solution, long millis) {
         long second = (millis / 1000) % 60;
         long minute = (millis / (1000 * 60)) % 60;
         long hour = (millis / (1000 * 60 * 60)) % 24;
 
-        String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
+        String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
 
-        LOG.info("Took {}", time);
-        LOG.info("Stack size: {}", solution.size());
+        System.out.printf("Time: %s\n", time);
+        System.out.printf("Flips required: %d\n", solution.size());
 
-        StringBuilder sb = new StringBuilder();
-
-        while (!solution.isEmpty()) {
-            sb.insert(0, Arrays.toString(solution.pop().getState()) + '\n');
+        for (Node node : solution) {
+            System.out.printf("%s\n", Arrays.toString(node.getState()));
         }
 
-        System.out.println(sb.toString());
+        clearListeners();
+    }
+
+    private void clearListeners() {
+        Object[] packetBuf = new Object[]{new WorkPacket(0, 0)};
+        try {
+            for (int worker : workers) {
+                MPI.COMM_WORLD.Send(EMPTY_BUFFER, 0, 0, MPI.INT, worker, Tags.KILL.tag());
+                Thread.sleep(100); // just for good measure
+                MPI.COMM_WORLD.Isend(packetBuf, 0, 1, MPI.OBJECT, worker, Tags.WORK.tag());
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initialWork() {
-        bound = stack.peek().getDistance();
+        if (bound < 0) {
+            bound = stack.peek().getDistance();
+        }
         candidateBound = Integer.MAX_VALUE;
 
         int i = 0;
-        LOG.info("Starting at distance {}", stack.peek().getDistance());
         while (stack.peek().getDistance() > 0 && i < INITIAL_WORK_DEPTH) {
             i++;
             if (stack.peek().getDistance() + stack.peek().getDepth() > bound) {
                 int stateBound = stack.peek().getDepth() + stack.peek().getDistance();
-                candidateBound = stateBound < candidateBound ? stateBound : candidateBound;
+                if (stateBound < candidateBound) {
+                    candidateBound = stateBound;
+                }
                 stack.pop();
             } else if (stack.peek().getChildren().empty()) {
                 if (stack.peek().getDepth() == 0) {
                     bound = candidateBound;
-                    LOG.info("Searching with bound {}", candidateBound);
                     candidateBound = Integer.MAX_VALUE;
                     stack.peek().nextNodes();
                 } else {
                     stack.pop();
-                    LOG.info("pop, nothing left to do");
                 }
             } else {
                 stack.push(stack.peek().getChildren().pop());

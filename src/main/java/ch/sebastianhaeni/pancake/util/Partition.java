@@ -6,24 +6,26 @@ import java.util.Stack;
 
 public class Partition {
     private final Stack<Node> stack;
-    private final int size;
-    private final int stackCount;
+    private final int partitionCount;
 
-    public Partition(Stack<Node> stack, int stackCount) {
+    public Partition(Stack<Node> stack, int partitionCount) {
         this.stack = stack;
-        this.size = (int) Math.ceil(((double) stack.size()) / stackCount);
-        this.stackCount = stackCount;
+        this.partitionCount = partitionCount;
     }
 
     public Stack<Node> get(int index) {
-        int start = index * size;
-        int end = Math.min(start + size, stack.size());
         Stack<Node> nodes = new Stack<>();
-        nodes.addAll(stack.subList(start, end));
+
+        for (Node node : stack) {
+            Node element = new Node(node.getState(), node.getDepth(), node.getDistance());
+            nodes.push(element);
+
+            for (int i = node.getChildren().size() - 1 - index; i >= 0; i -= partitionCount) {
+                element.getChildren().push(node.getChildren().get(i));
+            }
+        }
+
         return nodes;
     }
 
-    int size() {
-        return stackCount;
-    }
 }

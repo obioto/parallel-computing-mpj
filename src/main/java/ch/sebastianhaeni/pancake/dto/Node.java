@@ -41,14 +41,14 @@ public class Node implements Serializable {
         calcDistance();
     }
 
-    private Node(int[] state, int depth, int distance) {
+    public Node(int[] state, int depth, int distance) {
         this.state = state;
         this.depth = depth;
         this.size = state.length;
         this.distance = distance;
     }
 
-    public void calcDistance() {
+    private void calcDistance() {
         distance = 0;
 
         for (int i = 0; i < size - 1; i++) {
@@ -94,7 +94,7 @@ public class Node implements Serializable {
         int[] augmentedState = new int[size + 1];
         System.arraycopy(state, 0, augmentedState, 0, size);
         augmentedState[size] = size + 1;
-        return new Node(augmentedState);
+        return new Node(augmentedState, getDepth());
     }
 
     public int getDepth() {
