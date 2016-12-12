@@ -125,7 +125,7 @@ public class Controller implements IProcessor {
         String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
 
         System.out.printf("Time: %s\n", time);
-        System.out.printf("Flips required: %d\n", solution.size());
+        System.out.printf("Flips required: %d\n", solution.size() - 1); // states - 1 (the starting state does not count)
 
         for (Node node : solution) {
             System.out.printf("%s\n", Arrays.toString(node.getState()));
