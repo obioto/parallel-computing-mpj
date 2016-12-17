@@ -1,6 +1,6 @@
 package ch.sebastianhaeni.pancake.util;
 
-import ch.sebastianhaeni.pancake.dto.Node;
+import ch.sebastianhaeni.pancake.model.Node;
 
 import java.util.Stack;
 

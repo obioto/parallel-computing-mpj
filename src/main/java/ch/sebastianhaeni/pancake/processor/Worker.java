@@ -1,9 +1,9 @@
 package ch.sebastianhaeni.pancake.processor;
 
 import ch.sebastianhaeni.pancake.ParallelSolver;
-import ch.sebastianhaeni.pancake.dto.Node;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
+import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.util.IntListener;
 import ch.sebastianhaeni.pancake.util.Partition;
 import ch.sebastianhaeni.pancake.util.Status;
@@ -38,7 +38,7 @@ public class Worker implements IProcessor {
 
         waitForWork();
 
-        while (stack.peek().getDistance() > 0 && !status.isDone()) {
+        while (!stack.isEmpty() && stack.peek().gap() > 0 && !status.isDone()) {
             solve();
         }
 
@@ -61,7 +61,7 @@ public class Worker implements IProcessor {
     private void solve() {
         candidateBound = Integer.MAX_VALUE;
 
-        while (!stack.isEmpty() && stack.peek().getDistance() > 0 && !status.isDone()) {
+        while (!stack.isEmpty() && stack.peek().gap() > 0 && !status.isDone()) {
             if (stack.peek().getDistance() + stack.peek().getDepth() > bound) {
                 int stateBound = stack.peek().getDepth() + stack.peek().getDistance();
                 if (stateBound < candidateBound) {

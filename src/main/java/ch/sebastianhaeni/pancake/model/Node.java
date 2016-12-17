@@ -1,4 +1,4 @@
-package ch.sebastianhaeni.pancake.dto;
+package ch.sebastianhaeni.pancake.model;
 
 import java.io.Serializable;
 import java.util.Stack;
@@ -38,7 +38,7 @@ public class Node implements Serializable {
         this.state = state;
         this.depth = depth;
         this.size = state.length;
-        calcDistance();
+        this.distance = gap();
     }
 
     public Node(int[] state, int depth, int distance) {
@@ -48,24 +48,23 @@ public class Node implements Serializable {
         this.distance = distance;
     }
 
-    private void calcDistance() {
-        distance = 0;
+    public int gap() {
+        int gap = 0;
 
         for (int i = 0; i < size - 1; i++) {
-            if (Math.abs(state[i] - state[i + 1]) > 1) {
-                distance++;
+            if (state[i] - state[i + 1] != -1) {
+                gap++;
             }
         }
+        return gap;
     }
 
     public void nextNodes() {
         for (int i = 2; i < size; i++) {
-            if (Math.abs(state[i - 1] - state[i]) > 1) {
-                if (Math.abs(state[i] - state[0]) > 1) {
-                    children.push(flip(i, distance));
-                } else {
-                    children.push(flip(i, distance - 1));
-                }
+            if (state[i] - state[0] == 1) {
+                children.push(flip(i, distance - 1));
+            } else {
+                children.push(flip(i, distance));
             }
         }
     }

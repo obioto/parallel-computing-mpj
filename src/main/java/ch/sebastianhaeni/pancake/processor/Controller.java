@@ -1,22 +1,22 @@
 package ch.sebastianhaeni.pancake.processor;
 
-import ch.sebastianhaeni.pancake.dto.Node;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
+import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.util.IntListener;
 import ch.sebastianhaeni.pancake.util.Partition;
 import ch.sebastianhaeni.pancake.util.Status;
 import mpi.MPI;
 
-import java.util.Arrays;
 import java.util.Stack;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
+import static ch.sebastianhaeni.pancake.util.Output.showSolution;
 
 public class Controller implements IProcessor {
 
-    private static final int INITIAL_WORK_DEPTH = 10000;
+    private static final int INITIAL_WORK_DEPTH = 1000;
 
     private final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
     private final Stack<Node> stack = new Stack<>();
@@ -72,7 +72,7 @@ public class Controller implements IProcessor {
 
         initialWork();
 
-        if (stack.peek().getDistance() == 0) {
+        if (stack.peek().gap() == 0) {
             return true;
         }
 
@@ -118,18 +118,7 @@ public class Controller implements IProcessor {
     }
 
     private void finish(Stack<Node> solution, long millis) {
-        long second = (millis / 1000) % 60;
-        long minute = (millis / (1000 * 60)) % 60;
-        long hour = (millis / (1000 * 60 * 60)) % 24;
-
-        String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
-
-        System.out.printf("Time: %s\n", time);
-        System.out.printf("Flips required: %d\n", solution.size() - 1); // states - 1 (the starting state does not count)
-
-        for (Node node : solution) {
-            System.out.printf("%s\n", Arrays.toString(node.getState()));
-        }
+        showSolution(solution, millis);
 
         clearListeners();
     }
@@ -154,7 +143,7 @@ public class Controller implements IProcessor {
         candidateBound = Integer.MAX_VALUE;
 
         int i = 0;
-        while (stack.peek().getDistance() > 0 && i < INITIAL_WORK_DEPTH) {
+        while (stack.peek().gap() > 0 && i < INITIAL_WORK_DEPTH) {
             i++;
             if (stack.peek().getDistance() + stack.peek().getDepth() > bound) {
                 int stateBound = stack.peek().getDepth() + stack.peek().getDistance();

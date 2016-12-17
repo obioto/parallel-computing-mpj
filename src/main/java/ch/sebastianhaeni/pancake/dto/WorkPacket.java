@@ -1,5 +1,6 @@
 package ch.sebastianhaeni.pancake.dto;
 
+import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.processor.Worker;
 
 import java.io.Serializable;

@@ -1,8 +1,9 @@
-package ch.sebastianhaeni.pancake.dto;
+package ch.sebastianhaeni.pancake.model;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class NodeTest {
 
