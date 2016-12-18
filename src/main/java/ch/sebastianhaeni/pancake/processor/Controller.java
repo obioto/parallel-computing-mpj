@@ -72,7 +72,7 @@ public class Controller implements IProcessor {
 
         initialWork();
 
-        if (stack.peek().gap() == 0) {
+        if (stack.peek().getGap() == 0) {
             return true;
         }
 
@@ -138,15 +138,15 @@ public class Controller implements IProcessor {
 
     private void initialWork() {
         if (bound < 0) {
-            bound = stack.peek().getDistance();
+            bound = stack.peek().getGap();
         }
         candidateBound = Integer.MAX_VALUE;
 
         int i = 0;
-        while (stack.peek().gap() > 0 && i < INITIAL_WORK_DEPTH) {
+        while (stack.peek().getGap() > 0 && i < INITIAL_WORK_DEPTH) {
             i++;
-            if (stack.peek().getDistance() + stack.peek().getDepth() > bound) {
-                int stateBound = stack.peek().getDepth() + stack.peek().getDistance();
+            int stateBound = stack.peek().getGap() + stack.peek().getDepth();
+            if (stateBound > bound) {
                 if (stateBound < candidateBound) {
                     candidateBound = stateBound;
                 }

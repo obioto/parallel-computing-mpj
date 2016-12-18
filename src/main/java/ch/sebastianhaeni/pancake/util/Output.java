@@ -38,6 +38,9 @@ public class Output {
                 }
             }
 
+//            sb.append(", gap: ");
+//            sb.append(nodes.get(i).getGap());
+
             System.out.format("state %d: %s\n", i, sb.toString());
         }
     }

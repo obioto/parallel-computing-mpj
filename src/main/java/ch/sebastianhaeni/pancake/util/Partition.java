@@ -17,7 +17,7 @@ public class Partition {
         Stack<Node> nodes = new Stack<>();
 
         for (Node node : stack) {
-            Node element = new Node(node.getState(), node.getDepth(), node.getDistance());
+            Node element = new Node(node.getState(), node.getDepth(), node.getGap());
             nodes.push(element);
 
             for (int i = node.getChildren().size() - 1 - index; i >= 0; i -= partitionCount) {

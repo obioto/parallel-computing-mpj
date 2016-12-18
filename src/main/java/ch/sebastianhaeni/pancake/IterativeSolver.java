@@ -16,8 +16,9 @@ public final class IterativeSolver {
 
     public static void main(String[] args) {
 
-        Node root = new Node(Generator.alternate(20));
-//        Node root = new Node(Generator.random(40));
+        Node root = new Node(Generator.alternate(14));
+//        Node root = new Node(Generator.alternate(20));
+//        Node root = new Node(Generator.random(25));
 
         System.out.format("Solving a pancake pile of height %d.\n", root.getState().length);
 
@@ -33,12 +34,13 @@ public final class IterativeSolver {
         NODES.push(root);
         NODES.peek().nextNodes();
 
-        int bound = root.getDistance();
+        int bound = root.getGap();
+        System.out.println("Searching with bound " + bound);
         int candidateBound = Integer.MAX_VALUE;
 
-        while (NODES.peek().gap() > 0) {
-            if (NODES.peek().getDistance() + NODES.peek().getDepth() > bound) {
-                int stateBound = NODES.peek().getDepth() + NODES.peek().getDistance();
+        while (NODES.peek().getGap() > 0) {
+            int stateBound = NODES.peek().getGap() + NODES.peek().getDepth();
+            if (stateBound > bound) {
                 if (stateBound < candidateBound) {
                     candidateBound = stateBound;
                 }

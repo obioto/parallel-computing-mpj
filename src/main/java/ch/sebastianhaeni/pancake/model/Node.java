@@ -25,10 +25,9 @@ public class Node implements Serializable {
     private final Stack<Node> children = new Stack<>();
 
     /**
-     * Pancake pile size.
+     * Gap heuristic value.
      */
-    private final int size;
-    private int distance;
+    private final int gap;
 
     public Node(int[] state) {
         this(state, 0);
@@ -37,35 +36,43 @@ public class Node implements Serializable {
     private Node(int[] state, int depth) {
         this.state = state;
         this.depth = depth;
-        this.size = state.length;
-        this.distance = gap();
+        this.gap = gap();
     }
 
-    public Node(int[] state, int depth, int distance) {
+    public Node(int[] state, int depth, int gap) {
         this.state = state;
         this.depth = depth;
-        this.size = state.length;
-        this.distance = distance;
+        this.gap = gap;
     }
 
-    public int gap() {
+    private int gap() {
         int gap = 0;
 
-        for (int i = 0; i < size - 1; i++) {
-            if (state[i] - state[i + 1] != -1) {
+        for (int i = 1; i < state.length; i++) {
+            if (Math.abs(state[i] - state[i - 1]) > 1) {
                 gap++;
             }
         }
         return gap;
     }
 
+    /**
+     * Expands this node.
+     */
     public void nextNodes() {
-        for (int i = 2; i < size; i++) {
-            if (state[i] - state[0] == 1) {
-                children.push(flip(i, distance - 1));
-            } else {
-                children.push(flip(i, distance));
+        for (int i = 2; i < state.length; i++) {
+            int gap = this.gap;
+
+            int currentDiff = Math.abs(state[i] - state[i - 1]);
+            int newDiff = Math.abs(state[i] - state[0]);
+
+            if (currentDiff != 1 && newDiff == 1) {
+                gap -= 1;
+            } else if (currentDiff == 1 && newDiff != 1) {
+                gap += 1;
             }
+
+            children.push(flip(i, gap));
         }
     }
 
@@ -73,26 +80,31 @@ public class Node implements Serializable {
      * Flips the prefix at the defined flip position.
      *
      * @param flipPosition the position where the state shall be reversed
-     * @param distance     predetermined optimistic distance for the new nodes
+     * @param gap          predetermined optimistic gap for the new node
      * @return prefix reversed state
      */
-    Node flip(int flipPosition, int distance) {
+    Node flip(int flipPosition, int gap) {
 
-        int[] flipped = new int[size];
+        int[] flipped = new int[state.length];
 
         for (int i = 0; i < flipPosition; i++) {
             flipped[i] = state[flipPosition - i - 1];
         }
 
-        System.arraycopy(state, flipPosition, flipped, flipPosition, size - flipPosition);
+        System.arraycopy(state, flipPosition, flipped, flipPosition, state.length - flipPosition);
 
-        return new Node(flipped, getDepth() + 1, distance);
+        return new Node(flipped, getDepth() + 1, gap);
     }
 
+    /**
+     * Augments the state of this node. An additional item is added at the end of the state.
+     *
+     * @return new instanced node with augmented state
+     */
     public Node augment() {
-        int[] augmentedState = new int[size + 1];
-        System.arraycopy(state, 0, augmentedState, 0, size);
-        augmentedState[size] = size + 1;
+        int[] augmentedState = new int[state.length + 1];
+        System.arraycopy(state, 0, augmentedState, 0, state.length);
+        augmentedState[state.length] = state.length + 1;
         return new Node(augmentedState, getDepth());
     }
 
@@ -104,12 +116,11 @@ public class Node implements Serializable {
         return state;
     }
 
-    public int getDistance() {
-        return distance;
-    }
-
     public Stack<Node> getChildren() {
         return children;
     }
 
+    public int getGap() {
+        return gap;
+    }
 }

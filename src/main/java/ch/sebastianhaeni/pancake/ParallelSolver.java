@@ -11,7 +11,8 @@ public final class ParallelSolver {
     public static final int CONTROLLER_RANK = 0;
     public static final int[] EMPTY_BUFFER = new int[0];
 
-    private static final int[] INITIAL_STATE = Generator.random(30);
+//    private static final int[] INITIAL_STATE = Generator.random(30);
+    private static final int[] INITIAL_STATE = Generator.alternate(14);
 /*
     private static final int[] INITIAL_STATE = {7, 13, 21, 4, 16, 31, 30, 35, 40, 23, 8, 19, 33, 24, 38, 28, 29, 14, 26, 6, 25, 32, 1, 3, 5, 22, 37, 9, 20, 2, 10, 34, 18, 17, 11, 27, 12, 15, 39, 36}; // 40
     private static final int[] INITIAL_STATE = {3, 4, 2, 5, 1}; // 5

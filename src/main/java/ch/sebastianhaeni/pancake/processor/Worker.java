@@ -38,7 +38,7 @@ public class Worker implements IProcessor {
 
         waitForWork();
 
-        while (!stack.isEmpty() && stack.peek().gap() > 0 && !status.isDone()) {
+        while (!stack.isEmpty() && stack.peek().getGap() > 0 && !status.isDone()) {
             solve();
         }
 
@@ -61,9 +61,9 @@ public class Worker implements IProcessor {
     private void solve() {
         candidateBound = Integer.MAX_VALUE;
 
-        while (!stack.isEmpty() && stack.peek().gap() > 0 && !status.isDone()) {
-            if (stack.peek().getDistance() + stack.peek().getDepth() > bound) {
-                int stateBound = stack.peek().getDepth() + stack.peek().getDistance();
+        while (!stack.isEmpty() && stack.peek().getGap() > 0 && !status.isDone()) {
+            int stateBound = stack.peek().getGap() + stack.peek().getDepth();
+            if (stateBound > bound) {
                 if (stateBound < candidateBound) {
                     candidateBound = stateBound;
                 }
