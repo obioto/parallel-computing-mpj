@@ -45,6 +45,11 @@ public class Node implements Serializable {
         this.gap = gap;
     }
 
+    /**
+     * Calculates the gap value. This operation should only be called once for the root node.
+     *
+     * @return gap distance
+     */
     private int gap() {
         int gap = 0;
 
@@ -58,21 +63,33 @@ public class Node implements Serializable {
 
     /**
      * Expands this node.
+     * The gap value can be pre determined so we don't have to loop through again.
      */
     public void nextNodes() {
+        int previousValue = state[1];
+        int firstValue = state[0];
         for (int i = 2; i < state.length; i++) {
-            int gap = this.gap;
+            int currentValue = state[i];
+            int currentDiff = currentValue - previousValue;
+            previousValue = currentValue;
 
-            int currentDiff = Math.abs(state[i] - state[i - 1]);
-            int newDiff = Math.abs(state[i] - state[0]);
-
-            if (currentDiff != 1 && newDiff == 1) {
-                gap -= 1;
-            } else if (currentDiff == 1 && newDiff != 1) {
-                gap += 1;
+            if (currentDiff == 1) {
+                // skip correct orders
+                continue;
             }
 
-            children.push(flip(i, gap));
+            int newDiff = currentValue - firstValue;
+
+            boolean currentDiffOne = currentDiff == -1;
+            boolean newDiffOne = newDiff == 1 || newDiff == -1;
+
+            if (!currentDiffOne && newDiffOne) {
+                children.push(flip(i, gap - 1));
+            } else if (currentDiffOne && !newDiffOne) {
+                children.push(flip(i, gap + 1));
+            } else {
+                children.push(flip(i, gap));
+            }
         }
     }
 

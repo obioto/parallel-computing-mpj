@@ -15,16 +15,16 @@ import java.util.Stack;
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
 import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
 
-public class Worker implements IProcessor {
+public abstract class Worker implements IProcessor {
 
-    private final Status status = new Status();
+    final Status status = new Status();
     private int splitDestination;
-    private Stack<Node> stack = new Stack<>();
-    private int bound;
-    private int candidateBound;
-    private Request splitCommand;
+    Stack<Node> stack = new Stack<>();
+    int bound;
+    int candidateBound;
+    Request splitCommand;
 
-    public Worker() {
+    Worker() {
         splitDestination = (MPI.COMM_WORLD.Rank() + 1) % MPI.COMM_WORLD.Size();
         if (splitDestination == ParallelSolver.CONTROLLER_RANK) {
             splitDestination++;
@@ -38,18 +38,10 @@ public class Worker implements IProcessor {
 
         waitForWork();
 
-        while (!stack.isEmpty() && stack.peek().getGap() > 0 && !status.isDone()) {
-            solve();
-        }
-
-        if (status.isDone()) {
-            return;
-        }
-
-        Stack[] result = new Stack[1];
-        result[0] = stack;
-        MPI.COMM_WORLD.Isend(result, 0, 1, MPI.OBJECT, CONTROLLER_RANK, Tags.RESULT.tag());
+        work();
     }
+
+    abstract void work();
 
     private void listenToKill() {
         (new Thread(new IntListener(Tags.KILL, (source, result) -> {
@@ -58,44 +50,12 @@ public class Worker implements IProcessor {
         }, status))).start();
     }
 
-    private void solve() {
-        candidateBound = Integer.MAX_VALUE;
 
-        while (!stack.isEmpty() && stack.peek().getGap() > 0 && !status.isDone()) {
-            int stateBound = stack.peek().getGap() + stack.peek().getDepth();
-            if (stateBound > bound) {
-                if (stateBound < candidateBound) {
-                    candidateBound = stateBound;
-                }
-                stack.pop();
-            } else if (stack.peek().getChildren().empty()) {
-                if (stack.peek().getDepth() == 0) {
-                    requestWork();
-                } else {
-                    stack.pop();
-                }
-            } else {
-                stack.push(stack.peek().getChildren().pop());
-                stack.peek().nextNodes();
-            }
-
-            mpi.Status response;
-            if ((response = splitCommand.Test()) != null) {
-                splitAndSend(response.source);
-                listenToSplit();
-            }
-        }
-
-        if (stack.isEmpty() && !status.isDone()) {
-            requestWork();
-        }
-    }
-
-    private void listenToSplit() {
+    void listenToSplit() {
         splitCommand = MPI.COMM_WORLD.Irecv(EMPTY_BUFFER, 0, 0, MPI.INT, MPI.ANY_SOURCE, Tags.SPLIT.tag());
     }
 
-    private void requestWork() {
+    void requestWork() {
         int[] boundBuf = new int[1];
         boundBuf[0] = candidateBound;
 
@@ -121,7 +81,7 @@ public class Worker implements IProcessor {
         candidateBound = work.getCandidateBound();
     }
 
-    private void splitAndSend(int destination) {
+    void splitAndSend(int destination) {
         Partition partition = new Partition(stack, 2);
         stack = partition.get(0);
 
