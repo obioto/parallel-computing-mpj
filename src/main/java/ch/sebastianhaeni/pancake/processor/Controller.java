@@ -3,7 +3,6 @@ package ch.sebastianhaeni.pancake.processor;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
 import ch.sebastianhaeni.pancake.model.Node;
-import ch.sebastianhaeni.pancake.util.IntListener;
 import ch.sebastianhaeni.pancake.util.Partition;
 import ch.sebastianhaeni.pancake.util.Status;
 import mpi.MPI;
@@ -17,16 +16,16 @@ public abstract class Controller implements IProcessor {
 
     private static final int INITIAL_WORK_DEPTH = 1000;
 
-    private final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
+    final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
     final Stack<Node> stack = new Stack<>();
-    private final int[] workers;
-    private final int workerCount;
+    final int[] workers;
+    final int workerCount;
     final int[] initialState;
     final Status status = new Status();
 
     private int candidateBound;
-    private int bound = -1;
-    private int lastIncrease = -1;
+    int bound = -1;
+    int lastIncrease = -1;
 
     Controller(int[] initialState, int workerCount) {
         this.initialState = initialState;
@@ -46,33 +45,9 @@ public abstract class Controller implements IProcessor {
 
     abstract void work();
 
-    private void initializeListeners() {
-        for (int worker : workers) {
-            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker))).start();
-        }
-    }
+    abstract void handleIdle(int source, int[] result);
 
-    private void handleIdle(int source, int result) {
-        if (idleWorkers.contains(source)) {
-            return;
-        }
-        idleWorkers.add(source);
-
-        if (result > bound) {
-            bound = result;
-        }
-
-        if (idleWorkers.size() == workerCount) {
-            idleWorkers.clear();
-
-            if (lastIncrease == bound) {
-                return;
-            }
-            lastIncrease = bound;
-            (new Thread(this::solve)).start();
-        }
-    }
-
+    abstract void initializeListeners();
 
     void clearListeners() {
         Object[] packetBuf = new Object[]{new WorkPacket(0, 0)};

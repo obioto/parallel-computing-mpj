@@ -11,7 +11,7 @@ public final class ParallelSolver {
     private static final Mode CURRENT_MODE = Mode.COUNT;
 
     // Start with alternating sequence
-    private static final int[] INITIAL_STATE = Generator.alternate(10);
+    private static final int[] INITIAL_STATE = Generator.alternate(16);
 
     // Start with random sequence
     // private static final int[] INITIAL_STATE = Generator.random(25));

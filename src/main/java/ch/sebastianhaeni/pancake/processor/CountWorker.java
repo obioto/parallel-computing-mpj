@@ -1,5 +1,7 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import ch.sebastianhaeni.pancake.dto.Tags;
+import ch.sebastianhaeni.pancake.util.IntListener;
 import mpi.MPI;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
@@ -10,6 +12,13 @@ public class CountWorker extends Worker {
 
     @Override
     void work() {
+        (new Thread(new IntListener(Tags.GATHER, (source, result) -> {
+            status.done();
+            int[] countResult = new int[1];
+            countResult[0] = count;
+            MPI.COMM_WORLD.Reduce(countResult, 0, new int[1], 0, 1, MPI.INT, MPI.SUM, CONTROLLER_RANK);
+        }, status, CONTROLLER_RANK, 1))).start();
+
         while (!stack.isEmpty()) {
             count();
         }
@@ -37,7 +46,7 @@ public class CountWorker extends Worker {
                 stack.pop();
             } else if (stack.peek().getChildren().empty()) {
                 if (stack.peek().getDepth() == 0) {
-                    requestWork();
+                    requestWork(count);
                 } else {
                     stack.pop();
                 }
@@ -54,7 +63,7 @@ public class CountWorker extends Worker {
         }
 
         if (stack.isEmpty() && !status.isDone()) {
-            requestWork();
+            requestWork(count);
         }
     }
 }

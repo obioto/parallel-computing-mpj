@@ -47,19 +47,19 @@ public abstract class Worker implements IProcessor {
         (new Thread(new IntListener(Tags.KILL, (source, result) -> {
             status.done();
             MPI.COMM_WORLD.Send(EMPTY_BUFFER, 0, 0, MPI.INT, CONTROLLER_RANK, Tags.IDLE.tag());
-        }, status))).start();
+        }, status, MPI.ANY_SOURCE, 1))).start();
     }
-
 
     void listenToSplit() {
         splitCommand = MPI.COMM_WORLD.Irecv(EMPTY_BUFFER, 0, 0, MPI.INT, MPI.ANY_SOURCE, Tags.SPLIT.tag());
     }
 
-    void requestWork() {
-        int[] boundBuf = new int[1];
+    void requestWork(int data) {
+        int[] boundBuf = new int[2];
         boundBuf[0] = candidateBound;
+        boundBuf[1] = data;
 
-        MPI.COMM_WORLD.Isend(boundBuf, 0, 1, MPI.INT, CONTROLLER_RANK, Tags.IDLE.tag());
+        MPI.COMM_WORLD.Isend(boundBuf, 0, 2, MPI.INT, CONTROLLER_RANK, Tags.IDLE.tag());
         MPI.COMM_WORLD.Isend(EMPTY_BUFFER, 0, 0, MPI.INT, splitDestination, Tags.SPLIT.tag());
 
         waitForWork();

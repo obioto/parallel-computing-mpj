@@ -36,7 +36,7 @@ public class SolveWorker extends Worker {
                 stack.pop();
             } else if (stack.peek().getChildren().empty()) {
                 if (stack.peek().getDepth() == 0) {
-                    requestWork();
+                    requestWork(0);
                 } else {
                     stack.pop();
                 }
@@ -53,7 +53,7 @@ public class SolveWorker extends Worker {
         }
 
         if (stack.isEmpty() && !status.isDone()) {
-            requestWork();
+            requestWork(0);
         }
     }
 

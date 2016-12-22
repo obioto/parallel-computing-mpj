@@ -24,7 +24,7 @@ public enum Tags {
     /**
      * The controller commands the worker to split it's work and send back half of it.
      */
-    SPLIT;
+    SPLIT, GATHER;
 
     /**
      * Create an integer for MPI.

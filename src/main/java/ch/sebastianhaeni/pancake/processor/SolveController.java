@@ -2,6 +2,7 @@ package ch.sebastianhaeni.pancake.processor;
 
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.model.Node;
+import ch.sebastianhaeni.pancake.util.IntListener;
 import mpi.MPI;
 
 import java.util.Stack;
@@ -35,6 +36,35 @@ public class SolveController extends Controller {
         // End solving
 
         finishSolve(solution[0], end - start);
+    }
+
+    @Override
+    void initializeListeners() {
+        for (int worker : workers) {
+            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker, 1))).start();
+        }
+    }
+
+    @Override
+    void handleIdle(int source, int[] result) {
+        if (idleWorkers.contains(source)) {
+            return;
+        }
+        idleWorkers.add(source);
+
+        if (result[0] > bound) {
+            bound = result[0];
+        }
+
+        if (idleWorkers.size() == workerCount) {
+            idleWorkers.clear();
+
+            if (lastIncrease == bound) {
+                return;
+            }
+            lastIncrease = bound;
+            (new Thread(this::solve)).start();
+        }
     }
 
     private void finishSolve(Stack<Node> solution, long millis) {
