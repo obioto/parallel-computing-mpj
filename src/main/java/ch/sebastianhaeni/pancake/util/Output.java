@@ -1,12 +1,12 @@
 package ch.sebastianhaeni.pancake.util;
 
-import ch.sebastianhaeni.pancake.model.Node;
+import java.util.LinkedList;
 
-import java.util.Vector;
+import ch.sebastianhaeni.pancake.model.Node;
 
 public class Output {
 
-    public static void showSolution(Vector<Node> nodes, long millis) {
+    public static void showSolution(LinkedList<Node> nodes, long millis) {
         showSolution(nodes);
         showTime(millis);
     }
@@ -23,7 +23,7 @@ public class Output {
         System.out.format("time: %f sec\n", millis / 1000f);
     }
 
-    public static void showSolution(Vector<Node> nodes) {
+    public static void showSolution(LinkedList<Node> nodes) {
         for (int i = 0; i < nodes.size(); i++) {
             int[] state = nodes.get(i).getState();
 
@@ -33,7 +33,7 @@ public class Output {
         }
     }
 
-    private static String getStateRepresentation(Vector<Node> nodes, int i, int[] state) {
+    private static String getStateRepresentation(LinkedList<Node> nodes, int i, int[] state) {
         StringBuilder sb = new StringBuilder();
         int flipPosition = -1;
         if (i > 0) {
@@ -51,7 +51,7 @@ public class Output {
                 break;
             }
             if (flipPosition == j) {
-                sb.append("| ");
+                sb.append("\u001B[34m|\u001B[0m ");
             } else {
                 sb.append(", ");
             }

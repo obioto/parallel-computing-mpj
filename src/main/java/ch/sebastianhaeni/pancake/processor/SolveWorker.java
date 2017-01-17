@@ -1,9 +1,10 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import java.util.LinkedList;
+
 import ch.sebastianhaeni.pancake.dto.Tags;
 import mpi.MPI;
-
-import java.util.Stack;
+import mpi.Status;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
 
@@ -11,7 +12,7 @@ public class SolveWorker extends Worker {
 
     @Override
     void work() {
-        while (!stack.isEmpty() && stack.peek().getGap() > 0 && !status.isDone()) {
+        while (!nodes.isEmpty() && nodes.peek().getGap() > 0 && !status.isDone()) {
             solve();
         }
 
@@ -19,40 +20,40 @@ public class SolveWorker extends Worker {
             return;
         }
 
-        Stack[] result = new Stack[1];
-        result[0] = stack;
+        LinkedList[] result = new LinkedList[1];
+        result[0] = nodes;
         MPI.COMM_WORLD.Isend(result, 0, 1, MPI.OBJECT, CONTROLLER_RANK, Tags.RESULT.tag());
     }
 
     private void solve() {
         candidateBound = Integer.MAX_VALUE;
 
-        while (!stack.isEmpty() && stack.peek().getGap() > 0 && !status.isDone()) {
-            int stateBound = stack.peek().getGap() + stack.peek().getDepth();
+        while (!nodes.isEmpty() && nodes.peek().getGap() > 0 && !status.isDone()) {
+            int stateBound = nodes.peek().getGap() + nodes.peek().getDepth();
             if (stateBound > bound) {
                 if (stateBound < candidateBound) {
                     candidateBound = stateBound;
                 }
-                stack.pop();
-            } else if (stack.peek().getChildren().empty()) {
-                if (stack.peek().getDepth() == 0) {
+                nodes.pop();
+            } else if (nodes.peek().getChildren().isEmpty()) {
+                if (nodes.peek().getDepth() == 0) {
                     requestWork(0);
                 } else {
-                    stack.pop();
+                    nodes.pop();
                 }
             } else {
-                stack.push(stack.peek().getChildren().pop());
-                stack.peek().nextNodes();
+                nodes.push(nodes.peek().getChildren().pop());
+                nodes.peek().nextNodes();
             }
 
-            mpi.Status response;
+            Status response;
             if ((response = splitCommand.Test()) != null) {
                 splitAndSend(response.source);
                 listenToSplit();
             }
         }
 
-        if (stack.isEmpty() && !status.isDone()) {
+        if (nodes.isEmpty() && !status.isDone()) {
             requestWork(0);
         }
     }

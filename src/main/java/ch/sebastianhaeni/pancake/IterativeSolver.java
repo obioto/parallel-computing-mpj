@@ -1,10 +1,10 @@
 package ch.sebastianhaeni.pancake;
 
+import java.util.LinkedList;
+
 import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.util.Generator;
 import ch.sebastianhaeni.pancake.util.Mode;
-
-import java.util.Stack;
 
 import static ch.sebastianhaeni.pancake.util.Output.showCount;
 import static ch.sebastianhaeni.pancake.util.Output.showSolution;
@@ -15,6 +15,7 @@ public final class IterativeSolver {
     private static final Mode CURRENT_MODE = Mode.SOLVE;
 
     // Start with alternating sequence
+    //private static final int[] INITIAL_STATE = Generator.alternate(14);
     private static final int[] INITIAL_STATE = Generator.alternate(14);
 
     // Start with random sequence
@@ -24,7 +25,10 @@ public final class IterativeSolver {
     // private static final int[] INITIAL_STATE = new int[]{2, 1, 3, 4});
 
 
-    private static final Stack<Node> NODES = new Stack<>();
+    private static final LinkedList<Node> NODES = new LinkedList<>();
+
+    private IterativeSolver() {
+    }
 
     public static void main(String[] args) {
         Node root = new Node(INITIAL_STATE);
@@ -79,7 +83,7 @@ public final class IterativeSolver {
                     candidateBound = stateBound;
                 }
                 NODES.pop();
-            } else if (NODES.peek().getChildren().empty()) {
+            } else if (NODES.peek().getChildren().isEmpty()) {
                 if (NODES.peek().getDepth() == 0) {
                     // Out of work and haven't found the solution yet
                     // We must go deeper!
@@ -92,7 +96,7 @@ public final class IterativeSolver {
                     NODES.pop();
                 }
             } else {
-                // Add a child to the stack to work on
+                // Add a child to the nodes to work on
                 NODES.push(NODES.peek().getChildren().pop());
                 NODES.peek().nextNodes();
             }
@@ -127,7 +131,7 @@ public final class IterativeSolver {
                     candidateBound = stateBound;
                 }
                 NODES.pop();
-            } else if (NODES.peek().getChildren().empty()) {
+            } else if (NODES.peek().getChildren().isEmpty()) {
                 if (NODES.peek().getDepth() == 0 && count == 0) {
                     // Out of work and haven't found the solution yet
                     // We must go deeper!
@@ -140,7 +144,7 @@ public final class IterativeSolver {
                     NODES.pop();
                 }
             } else {
-                // Add a child to the stack to work on
+                // Add a child to the nodes to work on
                 NODES.push(NODES.peek().getChildren().pop());
                 NODES.peek().nextNodes();
             }

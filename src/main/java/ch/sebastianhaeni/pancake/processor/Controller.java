@@ -1,14 +1,14 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import java.util.LinkedList;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
 import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.util.Partition;
 import ch.sebastianhaeni.pancake.util.Status;
 import mpi.MPI;
-
-import java.util.Stack;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
 
@@ -17,7 +17,7 @@ public abstract class Controller implements IProcessor {
     private static final int INITIAL_WORK_DEPTH = 1000;
 
     final LinkedBlockingQueue<Integer> idleWorkers = new LinkedBlockingQueue<>(MPI.COMM_WORLD.Size() - 1);
-    final Stack<Node> stack = new Stack<>();
+    final LinkedList<Node> nodes = new LinkedList<>();
     final int[] workers;
     final int workerCount;
     final int[] initialState;
@@ -50,7 +50,7 @@ public abstract class Controller implements IProcessor {
     abstract void initializeListeners();
 
     void clearListeners() {
-        Object[] packetBuf = new Object[]{new WorkPacket(0, 0)};
+        Object[] packetBuf = { new WorkPacket(0, 0) };
         try {
             for (int worker : workers) {
                 MPI.COMM_WORLD.Send(EMPTY_BUFFER, 0, 0, MPI.INT, worker, Tags.KILL.tag());
@@ -66,58 +66,58 @@ public abstract class Controller implements IProcessor {
         Node root = new Node(initialState);
         root = root.augment();
 
-        stack.push(root);
-        stack.peek().nextNodes();
+        nodes.push(root);
+        nodes.peek().nextNodes();
 
         initialWork();
 
-        if (stack.peek().getGap() == 0) {
+        if (nodes.peek().getGap() == 0) {
             return true;
         }
 
         System.out.printf("Bound: %d\n", bound);
 
-        Partition partition = new Partition(stack, workerCount);
+        Partition partition = new Partition(nodes, workerCount);
         WorkPacket packet = new WorkPacket(bound, candidateBound);
         WorkPacket[] packetBuf = new WorkPacket[1];
         packetBuf[0] = packet;
 
         for (int i = 0; i < workerCount; i++) {
-            packet.setStack(partition.get(i));
+            packet.setNodes(partition.get(i));
             MPI.COMM_WORLD.Isend(packetBuf, 0, 1, MPI.OBJECT, workers[i], Tags.WORK.tag());
         }
 
-        stack.clear();
+        nodes.clear();
 
         return false;
     }
 
     private void initialWork() {
         if (bound < 0) {
-            bound = stack.peek().getGap();
+            bound = nodes.peek().getGap();
         }
         candidateBound = Integer.MAX_VALUE;
 
         int i = 0;
-        while (stack.peek().getGap() > 0 && i < INITIAL_WORK_DEPTH) {
+        while (nodes.peek().getGap() > 0 && i < INITIAL_WORK_DEPTH) {
             i++;
-            int stateBound = stack.peek().getGap() + stack.peek().getDepth();
+            int stateBound = nodes.peek().getGap() + nodes.peek().getDepth();
             if (stateBound > bound) {
                 if (stateBound < candidateBound) {
                     candidateBound = stateBound;
                 }
-                stack.pop();
-            } else if (stack.peek().getChildren().empty()) {
-                if (stack.peek().getDepth() == 0) {
+                nodes.pop();
+            } else if (nodes.peek().getChildren().isEmpty()) {
+                if (nodes.peek().getDepth() == 0) {
                     bound = candidateBound;
                     candidateBound = Integer.MAX_VALUE;
-                    stack.peek().nextNodes();
+                    nodes.peek().nextNodes();
                 } else {
-                    stack.pop();
+                    nodes.pop();
                 }
             } else {
-                stack.push(stack.peek().getChildren().pop());
-                stack.peek().nextNodes();
+                nodes.push(nodes.peek().getChildren().pop());
+                nodes.peek().nextNodes();
             }
         }
     }

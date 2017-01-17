@@ -1,5 +1,7 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import java.util.LinkedList;
+
 import ch.sebastianhaeni.pancake.ParallelSolver;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
@@ -10,8 +12,6 @@ import ch.sebastianhaeni.pancake.util.Status;
 import mpi.MPI;
 import mpi.Request;
 
-import java.util.Stack;
-
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
 import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
 
@@ -19,7 +19,7 @@ public abstract class Worker implements IProcessor {
 
     final Status status = new Status();
     private int splitDestination;
-    Stack<Node> stack = new Stack<>();
+    LinkedList<Node> nodes = new LinkedList<>();
     int bound;
     int candidateBound;
     Request splitCommand;
@@ -76,17 +76,17 @@ public abstract class Worker implements IProcessor {
 
         WorkPacket work = (WorkPacket) packetBuf[0];
 
-        stack = work.getStack();
+        nodes = work.getNodes();
         bound = work.getBound();
         candidateBound = work.getCandidateBound();
     }
 
     void splitAndSend(int destination) {
-        Partition partition = new Partition(stack, 2);
-        stack = partition.get(0);
+        Partition partition = new Partition(nodes, 2);
+        nodes = partition.get(0);
 
         WorkPacket packet = new WorkPacket(bound, candidateBound);
-        packet.setStack(partition.get(1));
+        packet.setNodes(partition.get(1));
 
         MPI.COMM_WORLD.Isend(new WorkPacket[]{packet}, 0, 1, MPI.OBJECT, destination, Tags.WORK.tag());
     }

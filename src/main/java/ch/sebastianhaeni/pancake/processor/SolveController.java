@@ -5,7 +5,7 @@ import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.util.IntListener;
 import mpi.MPI;
 
-import java.util.Stack;
+import java.util.LinkedList;
 
 import static ch.sebastianhaeni.pancake.util.Output.showSolution;
 
@@ -24,11 +24,11 @@ public class SolveController extends Controller {
 
         if (solve()) {
             long end = System.currentTimeMillis();
-            finishSolve(stack, end - start);
+            finishSolve(nodes, end - start);
             return;
         }
 
-        Stack<Node>[] solution = new Stack[1];
+        LinkedList<Node>[] solution = new LinkedList[1];
         MPI.COMM_WORLD.Recv(solution, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, Tags.RESULT.tag());
         status.done();
 
@@ -41,7 +41,7 @@ public class SolveController extends Controller {
     @Override
     void initializeListeners() {
         for (int worker : workers) {
-            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker, 1))).start();
+            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker, 2))).start();
         }
     }
 
@@ -67,7 +67,7 @@ public class SolveController extends Controller {
         }
     }
 
-    private void finishSolve(Stack<Node> solution, long millis) {
+    private void finishSolve(LinkedList<Node> solution, long millis) {
         showSolution(solution, millis);
         clearListeners();
     }

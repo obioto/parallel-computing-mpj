@@ -4,7 +4,7 @@ import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.processor.Worker;
 
 import java.io.Serializable;
-import java.util.Stack;
+import java.util.LinkedList;
 
 /**
  * A packet of work for the {@link Worker}.
@@ -12,7 +12,7 @@ import java.util.Stack;
 public class WorkPacket implements Serializable {
     private static final long serialVersionUID = -6551566361178729826L;
 
-    private Stack<Node> stack;
+    private LinkedList<Node> nodes;
     private final int bound;
     private final int candidateBound;
 
@@ -21,12 +21,12 @@ public class WorkPacket implements Serializable {
         this.candidateBound = candidateBound;
     }
 
-    public void setStack(Stack<Node> stack) {
-        this.stack = stack;
+    public void setNodes(LinkedList<Node> nodes) {
+        this.nodes = nodes;
     }
 
-    public Stack<Node> getStack() {
-        return stack;
+    public LinkedList<Node> getNodes() {
+        return nodes;
     }
 
     public int getBound() {

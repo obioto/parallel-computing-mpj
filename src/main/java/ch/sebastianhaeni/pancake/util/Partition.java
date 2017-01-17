@@ -2,21 +2,21 @@ package ch.sebastianhaeni.pancake.util;
 
 import ch.sebastianhaeni.pancake.model.Node;
 
-import java.util.Stack;
+import java.util.LinkedList;
 
 public class Partition {
-    private final Stack<Node> stack;
+    private final LinkedList<Node> nodes;
     private final int partitionCount;
 
-    public Partition(Stack<Node> stack, int partitionCount) {
-        this.stack = stack;
+    public Partition(LinkedList<Node> nodes, int partitionCount) {
+        this.nodes = nodes;
         this.partitionCount = partitionCount;
     }
 
-    public Stack<Node> get(int index) {
-        Stack<Node> nodes = new Stack<>();
+    public LinkedList<Node> get(int index) {
+        LinkedList<Node> nodes = new LinkedList<>();
 
-        for (Node node : stack) {
+        for (Node node : this.nodes) {
             Node element = new Node(node.getState(), node.getDepth(), node.getGap());
             nodes.push(element);
 

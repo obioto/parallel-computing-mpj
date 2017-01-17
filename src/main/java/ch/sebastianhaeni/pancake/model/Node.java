@@ -1,7 +1,7 @@
 package ch.sebastianhaeni.pancake.model;
 
 import java.io.Serializable;
-import java.util.Stack;
+import java.util.LinkedList;
 
 /**
  * A node in a search tree.
@@ -20,9 +20,9 @@ public class Node implements Serializable {
     private final int depth;
 
     /**
-     * Stack of child nodes generated from this node.
+     * List of child nodes generated from this node.
      */
-    private final Stack<Node> children = new Stack<>();
+    private final LinkedList<Node> children = new LinkedList<>();
 
     /**
      * Gap heuristic value.
@@ -68,6 +68,7 @@ public class Node implements Serializable {
     public void nextNodes() {
         int previousValue = state[1];
         int firstValue = state[0];
+
         for (int i = 2; i < state.length; i++) {
             int currentValue = state[i];
             int currentDiff = currentValue - previousValue;
@@ -133,7 +134,7 @@ public class Node implements Serializable {
         return state;
     }
 
-    public Stack<Node> getChildren() {
+    public LinkedList<Node> getChildren() {
         return children;
     }
 
