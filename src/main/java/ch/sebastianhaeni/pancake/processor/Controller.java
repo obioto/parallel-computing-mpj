@@ -23,6 +23,7 @@ public abstract class Controller implements IProcessor {
 
     protected int[][] workerData;
     protected Request[] workerListeners;
+    protected Request[] workerWorkingListeners;
 
     private int candidateBound;
     protected int bound = -1;
@@ -34,6 +35,7 @@ public abstract class Controller implements IProcessor {
         this.workers = new int[workerCount];
         this.workerData = new int[workerCount][2];
         this.workerListeners = new Request[workerCount];
+        this.workerWorkingListeners = new Request[workerCount];
 
         for (int i = 0; i < workerCount; i++) {
             this.workers[i] = i + 1;
@@ -43,14 +45,19 @@ public abstract class Controller implements IProcessor {
     @Override
     public void run() {
         initializeListeners();
-        work();
+        try {
+            work();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    protected abstract void work();
+    protected abstract void work() throws InterruptedException;
 
     private void initializeListeners() {
         for (int worker : workers) {
             initWorkerListener(worker);
+            initWorkingListener(worker);
         }
     }
 
@@ -59,16 +66,15 @@ public abstract class Controller implements IProcessor {
         workerListeners[worker - 1] = MPI.COMM_WORLD.Irecv(workerData[worker - 1], 0, 2, MPI.INT, worker, Tags.IDLE.tag());
     }
 
+    protected void initWorkingListener(int worker) {
+        workerWorkingListeners[worker - 1] = MPI.COMM_WORLD.Irecv(EMPTY_BUFFER, 0, 0, MPI.INT, worker, Tags.WORKING.tag());
+    }
+
     protected void clearListeners() {
-        Object[] packetBuf = {new WorkPacket(0, 0)};
-        try {
-            for (int worker : workers) {
-                MPI.COMM_WORLD.Send(EMPTY_BUFFER, 0, 0, MPI.INT, worker, Tags.KILL.tag());
-                Thread.sleep(100); // just for good measure
-                MPI.COMM_WORLD.Isend(packetBuf, 0, 1, MPI.OBJECT, worker, Tags.WORK.tag());
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        Object[] packetBuf = { new WorkPacket(0, 0) };
+        for (int worker : workers) {
+            MPI.COMM_WORLD.Send(EMPTY_BUFFER, 0, 0, MPI.INT, worker, Tags.KILL.tag());
+            MPI.COMM_WORLD.Isend(packetBuf, 0, 1, MPI.OBJECT, worker, Tags.WORK.tag());
         }
     }
 

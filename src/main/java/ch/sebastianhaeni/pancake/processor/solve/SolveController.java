@@ -17,7 +17,7 @@ public class SolveController extends Controller {
     }
 
     @Override
-    protected void work() {
+    protected void work() throws InterruptedException {
         System.out.printf("Solving a pancake pile in parallel of height %s.\n", initialState.length);
 
         // Start solving
@@ -38,12 +38,13 @@ public class SolveController extends Controller {
                     handleIdle(worker, workerData[worker - 1]);
                     initWorkerListener(worker);
                 }
+
+                if (workerWorkingListeners[worker - 1].Test() != null) {
+                    idleWorkers.remove(worker);
+                    initWorkingListener(worker);
+                }
             }
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            Thread.sleep(20);
         }
 
         long end = System.currentTimeMillis();
@@ -52,7 +53,7 @@ public class SolveController extends Controller {
         finishSolve(solution[0], end - start);
     }
 
-    private void handleIdle(int source, int[] result) {
+    private void handleIdle(int source, int[] result) throws InterruptedException {
         if (idleWorkers.contains(source)) {
             return;
         }
@@ -64,6 +65,16 @@ public class SolveController extends Controller {
         }
 
         if (idleWorkers.size() == workerCount) {
+            Thread.sleep(100);
+
+            for (int worker : workers) {
+                if (workerWorkingListeners[worker - 1].Test() != null) {
+                    idleWorkers.remove(worker);
+                    initWorkingListener(worker);
+                    return;
+                }
+            }
+
             idleWorkers.clear();
 
             if (lastIncrease == bound) {
