@@ -23,7 +23,6 @@ public abstract class Controller implements IProcessor {
 
     protected int[][] workerData;
     protected Request[] workerListeners;
-    protected Request[] workerWorkingListeners;
 
     private int candidateBound;
     protected int bound = -1;
@@ -35,7 +34,6 @@ public abstract class Controller implements IProcessor {
         this.workers = new int[workerCount];
         this.workerData = new int[workerCount][2];
         this.workerListeners = new Request[workerCount];
-        this.workerWorkingListeners = new Request[workerCount];
 
         for (int i = 0; i < workerCount; i++) {
             this.workers[i] = i + 1;
@@ -57,17 +55,12 @@ public abstract class Controller implements IProcessor {
     private void initializeListeners() {
         for (int worker : workers) {
             initWorkerListener(worker);
-            initWorkingListener(worker);
         }
     }
 
     protected void initWorkerListener(int worker) {
         workerData[worker - 1] = new int[2];
         workerListeners[worker - 1] = MPI.COMM_WORLD.Irecv(workerData[worker - 1], 0, 2, MPI.INT, worker, Tags.IDLE.tag());
-    }
-
-    protected void initWorkingListener(int worker) {
-        workerWorkingListeners[worker - 1] = MPI.COMM_WORLD.Irecv(EMPTY_BUFFER, 0, 0, MPI.INT, worker, Tags.WORKING.tag());
     }
 
     protected void clearListeners() {
@@ -100,6 +93,7 @@ public abstract class Controller implements IProcessor {
 
         for (int i = 0; i < workerCount; i++) {
             packet.setNodes(partition.get(i));
+            System.out.format("Sending to worker %d: %s\n", workers[i], packet.getNodes());
             MPI.COMM_WORLD.Isend(packetBuf, 0, 1, MPI.OBJECT, workers[i], Tags.WORK.tag());
         }
 

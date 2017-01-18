@@ -9,7 +9,7 @@ public class Partition {
     private final int partitionCount;
 
     public Partition(ArrayDeque<Node> nodes, int partitionCount) {
-        this.nodes =nodes;
+        this.nodes = nodes;
         this.partitionCount = partitionCount;
     }
 
@@ -20,8 +20,11 @@ public class Partition {
             Node element = new Node(node.getState(), node.getDepth(), node.getGap());
             nodes.push(element);
 
+            Node[] children = new Node[node.getChildren().size()];
+            node.getChildren().toArray(children);
+
             for (int i = node.getChildren().size() - 1 - index; i >= 0; i -= partitionCount) {
-                element.getChildren().push(node.getChildren().pop());
+                element.getChildren().push(children[i]);
             }
         }
 

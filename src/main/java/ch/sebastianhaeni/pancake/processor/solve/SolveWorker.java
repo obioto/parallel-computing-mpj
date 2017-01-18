@@ -3,7 +3,6 @@ package ch.sebastianhaeni.pancake.processor.solve;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.processor.Worker;
 import mpi.MPI;
-import mpi.Status;
 
 import java.util.ArrayDeque;
 
@@ -13,6 +12,9 @@ public class SolveWorker extends Worker {
 
     @Override
     protected void work() {
+        if (nodes == null) {
+            return;
+        }
         while (!nodes.isEmpty() && nodes.peek().getGap() > 0) {
             if (solve()) {
                 break;
@@ -21,6 +23,7 @@ public class SolveWorker extends Worker {
 
         ArrayDeque[] result = new ArrayDeque[1];
         result[0] = nodes;
+        System.out.format("Worker %d found solution with bound %d\n", MPI.COMM_WORLD.Rank(), bound);
         MPI.COMM_WORLD.Isend(result, 0, 1, MPI.OBJECT, CONTROLLER_RANK, Tags.RESULT.tag());
     }
 
@@ -36,10 +39,6 @@ public class SolveWorker extends Worker {
                 nodes.pop();
             } else if (nodes.peek().getChildren().isEmpty()) {
                 if (nodes.peek().getDepth() == 0) {
-                    if (candidateBound == Integer.MAX_VALUE) {
-                        System.out.println(nodes);
-                        candidateBound = bound;
-                    }
                     requestWork(0);
                     nodes.peek().nextNodes();
                 } else {
@@ -48,12 +47,6 @@ public class SolveWorker extends Worker {
             } else {
                 nodes.push(nodes.peek().getChildren().pop());
                 nodes.peek().nextNodes();
-            }
-
-            Status response;
-            if ((response = splitCommand.Test()) != null) {
-                splitAndSend(response.source);
-                listenToSplit();
             }
 
             if (killCommand.Test() != null) {

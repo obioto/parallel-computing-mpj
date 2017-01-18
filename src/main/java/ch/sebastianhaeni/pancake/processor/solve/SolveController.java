@@ -38,11 +38,6 @@ public class SolveController extends Controller {
                     handleIdle(worker, workerData[worker - 1]);
                     initWorkerListener(worker);
                 }
-
-                if (workerWorkingListeners[worker - 1].Test() != null) {
-                    idleWorkers.remove(worker);
-                    initWorkingListener(worker);
-                }
             }
             Thread.sleep(20);
         }
@@ -66,14 +61,6 @@ public class SolveController extends Controller {
 
         if (idleWorkers.size() == workerCount) {
             Thread.sleep(100);
-
-            for (int worker : workers) {
-                if (workerWorkingListeners[worker - 1].Test() != null) {
-                    idleWorkers.remove(worker);
-                    initWorkingListener(worker);
-                    return;
-                }
-            }
 
             idleWorkers.clear();
 

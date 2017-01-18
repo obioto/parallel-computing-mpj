@@ -4,7 +4,6 @@ import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.processor.Worker;
 import mpi.MPI;
 import mpi.Request;
-import mpi.Status;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
 import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
@@ -52,12 +51,6 @@ public class CountWorker extends Worker {
             } else {
                 nodes.push(nodes.peek().getChildren().pop());
                 nodes.peek().nextNodes();
-            }
-
-            Status response;
-            if ((response = splitCommand.Test()) != null) {
-                splitAndSend(response.source);
-                listenToSplit();
             }
 
             if (gatherCommand.Test() != null) {

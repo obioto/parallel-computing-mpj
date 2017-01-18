@@ -18,10 +18,10 @@ public final class ParallelSolver {
     private static final int[] INITIAL_STATE = Generator.alternate(14);
 
     // Start with random sequence
-    // private static final int[] INITIAL_STATE = Generator.random(25));
+    // private static final int[] INITIAL_STATE = Generator.random(25);
 
     // Start with predetermined sequence
-    // private static final int[] INITIAL_STATE = new int[]{2, 1, 3, 4});
+    // private static final int[] INITIAL_STATE = new int[]{2, 1, 3, 4};
 
 
     public static final int CONTROLLER_RANK = 0;

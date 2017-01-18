@@ -22,16 +22,6 @@ public enum Tags {
     IDLE,
 
     /**
-     * Sent from worker when is not idle anymore.
-     */
-    WORKING,
-
-    /**
-     * The controller commands the worker to split it's work and send back half of it.
-     */
-    SPLIT,
-
-    /**
      * Gather reduction for counts of solution from workers.
      */
     GATHER;

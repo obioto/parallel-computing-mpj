@@ -27,7 +27,7 @@ public class Output {
     public static void showSolution(ArrayDeque<Node> nodes) {
         ArrayList<Node> solution = new ArrayList<>(nodes);
         String solutionString = "";
-        for (int i = 0; i < nodes.size(); i++) {
+        for (int i = 0; i < nodes.size() && solution.get(i).getDepth() >= 0; i++) {
             int[] state = solution.get(i).getState();
 
             String stateString = getStateRepresentation(solution, i, state);

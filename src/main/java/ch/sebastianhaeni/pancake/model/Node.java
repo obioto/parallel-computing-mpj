@@ -122,7 +122,7 @@ public class Node implements Serializable {
 
         System.arraycopy(state, flipPosition, flipped, flipPosition, state.length - flipPosition);
 
-        return new Node(flipped, getDepth() + 1, gap);
+        return new Node(flipped, depth + 1, gap);
     }
 
     /**
