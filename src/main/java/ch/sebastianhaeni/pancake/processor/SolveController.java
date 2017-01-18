@@ -41,7 +41,7 @@ public class SolveController extends Controller {
     @Override
     void initializeListeners() {
         for (int worker : workers) {
-            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker, 1))).start();
+            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker, 2))).start();
         }
     }
 
