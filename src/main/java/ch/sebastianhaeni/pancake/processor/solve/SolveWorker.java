@@ -52,7 +52,6 @@ public class SolveWorker extends Worker {
 
             Status response;
             if ((response = splitCommand.Test()) != null) {
-                System.out.format("Worker %d sending to %d\n", MPI.COMM_WORLD.Rank(), response.source);
                 splitAndSend(response.source);
                 listenToSplit();
             }

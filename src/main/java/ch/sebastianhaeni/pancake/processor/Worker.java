@@ -1,5 +1,7 @@
 package ch.sebastianhaeni.pancake.processor;
 
+import java.util.ArrayDeque;
+
 import ch.sebastianhaeni.pancake.ParallelSolver;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
@@ -7,8 +9,6 @@ import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.util.Partition;
 import mpi.MPI;
 import mpi.Request;
-
-import java.util.ArrayDeque;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
 import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
@@ -59,6 +59,7 @@ public abstract class Worker implements IProcessor {
         Object[] packetBuf = new Object[1];
 
         MPI.COMM_WORLD.Recv(packetBuf, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, Tags.WORK.tag());
+        MPI.COMM_WORLD.Send(EMPTY_BUFFER, 0, 0, MPI.INT, CONTROLLER_RANK, Tags.WORKING.tag());
 
         WorkPacket work = (WorkPacket) packetBuf[0];
 
@@ -73,8 +74,9 @@ public abstract class Worker implements IProcessor {
 
         WorkPacket packet = new WorkPacket(bound, candidateBound);
         packet.setNodes(partition.get(1));
+        System.out.format("Worker %d sending %d packets to %d\n", MPI.COMM_WORLD.Rank(), packet.getNodes().size(), destination);
 
-        MPI.COMM_WORLD.Isend(new WorkPacket[]{packet}, 0, 1, MPI.OBJECT, destination, Tags.WORK.tag());
+        MPI.COMM_WORLD.Isend(new WorkPacket[] { packet }, 0, 1, MPI.OBJECT, destination, Tags.WORK.tag());
     }
 
 }
