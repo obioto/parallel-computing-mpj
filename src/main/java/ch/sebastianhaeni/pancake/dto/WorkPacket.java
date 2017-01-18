@@ -4,7 +4,7 @@ import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.processor.Worker;
 
 import java.io.Serializable;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 
 /**
  * A packet of work for the {@link Worker}.
@@ -12,7 +12,7 @@ import java.util.LinkedList;
 public class WorkPacket implements Serializable {
     private static final long serialVersionUID = -6551566361178729826L;
 
-    private LinkedList<Node> nodes;
+    private ArrayDeque<Node> nodes;
     private final int bound;
     private final int candidateBound;
 
@@ -21,11 +21,11 @@ public class WorkPacket implements Serializable {
         this.candidateBound = candidateBound;
     }
 
-    public void setNodes(LinkedList<Node> nodes) {
+    public void setNodes(ArrayDeque<Node> nodes) {
         this.nodes = nodes;
     }
 
-    public LinkedList<Node> getNodes() {
+    public ArrayDeque<Node> getNodes() {
         return nodes;
     }
 

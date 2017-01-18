@@ -1,7 +1,7 @@
-package ch.sebastianhaeni.pancake.processor;
+package ch.sebastianhaeni.pancake.processor.count;
 
 import ch.sebastianhaeni.pancake.dto.Tags;
-import ch.sebastianhaeni.pancake.util.IntListener;
+import ch.sebastianhaeni.pancake.processor.Controller;
 import mpi.MPI;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
@@ -17,7 +17,7 @@ public class CountController extends Controller {
     }
 
     @Override
-    void work() {
+    protected void work() {
         System.out.format("Counting solutions for a pancake pile of height %d.\n", initialState.length);
 
         // Start counting
@@ -31,7 +31,6 @@ public class CountController extends Controller {
 
         int[] countBuf = new int[1];
         MPI.COMM_WORLD.Reduce(new int[]{0}, 0, countBuf, 0, 1, MPI.INT, MPI.SUM, CONTROLLER_RANK);
-        status.done();
 
         long end = System.currentTimeMillis();
         // End counting
@@ -39,14 +38,6 @@ public class CountController extends Controller {
         finishCount(countBuf[0], end - start);
     }
 
-    @Override
-    void initializeListeners() {
-        for (int worker : workers) {
-            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker, 2))).start();
-        }
-    }
-
-    @Override
     void handleIdle(int source, int[] result) {
 
         if (result[1] > 0 && !foundSolution) {
@@ -68,11 +59,6 @@ public class CountController extends Controller {
             idleWorkers.clear();
 
             if (foundSolution) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 if (idleWorkers.size() != workerCount) {
                     return;
                 }
@@ -86,7 +72,7 @@ public class CountController extends Controller {
                 return;
             }
             lastIncrease = bound;
-            (new Thread(this::solve)).start();
+            solve();
         }
     }
 

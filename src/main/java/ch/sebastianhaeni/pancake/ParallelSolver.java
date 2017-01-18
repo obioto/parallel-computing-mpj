@@ -1,6 +1,10 @@
 package ch.sebastianhaeni.pancake;
 
-import ch.sebastianhaeni.pancake.processor.*;
+import ch.sebastianhaeni.pancake.processor.IProcessor;
+import ch.sebastianhaeni.pancake.processor.count.CountController;
+import ch.sebastianhaeni.pancake.processor.count.CountWorker;
+import ch.sebastianhaeni.pancake.processor.solve.SolveController;
+import ch.sebastianhaeni.pancake.processor.solve.SolveWorker;
 import ch.sebastianhaeni.pancake.util.Generator;
 import ch.sebastianhaeni.pancake.util.Mode;
 import mpi.MPI;
@@ -11,7 +15,6 @@ public final class ParallelSolver {
     private static final Mode CURRENT_MODE = Mode.SOLVE;
 
     // Start with alternating sequence
-    //private static final int[] INITIAL_STATE = Generator.alternate(16);
     private static final int[] INITIAL_STATE = Generator.alternate(14);
 
     // Start with random sequence

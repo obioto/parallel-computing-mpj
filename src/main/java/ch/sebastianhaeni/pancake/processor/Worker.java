@@ -1,30 +1,28 @@
 package ch.sebastianhaeni.pancake.processor;
 
-import java.util.LinkedList;
-
 import ch.sebastianhaeni.pancake.ParallelSolver;
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.dto.WorkPacket;
 import ch.sebastianhaeni.pancake.model.Node;
-import ch.sebastianhaeni.pancake.util.IntListener;
 import ch.sebastianhaeni.pancake.util.Partition;
-import ch.sebastianhaeni.pancake.util.Status;
 import mpi.MPI;
 import mpi.Request;
+
+import java.util.ArrayDeque;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
 import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
 
 public abstract class Worker implements IProcessor {
 
-    final Status status = new Status();
     private int splitDestination;
-    LinkedList<Node> nodes = new LinkedList<>();
-    int bound;
-    int candidateBound;
-    Request splitCommand;
+    protected ArrayDeque<Node> nodes = new ArrayDeque<>();
+    protected int bound;
+    protected int candidateBound;
+    protected Request splitCommand;
+    protected Request killCommand;
 
-    Worker() {
+    protected Worker() {
         splitDestination = (MPI.COMM_WORLD.Rank() + 1) % MPI.COMM_WORLD.Size();
         if (splitDestination == ParallelSolver.CONTROLLER_RANK) {
             splitDestination++;
@@ -33,28 +31,20 @@ public abstract class Worker implements IProcessor {
 
     @Override
     public void run() {
+        killCommand = MPI.COMM_WORLD.Irecv(EMPTY_BUFFER, 0, 0, MPI.INT, MPI.ANY_SOURCE, Tags.KILL.tag());
         listenToSplit();
-        listenToKill();
-
         waitForWork();
 
         work();
     }
 
-    abstract void work();
+    protected abstract void work();
 
-    private void listenToKill() {
-        (new Thread(new IntListener(Tags.KILL, (source, result) -> {
-            status.done();
-            MPI.COMM_WORLD.Send(EMPTY_BUFFER, 0, 0, MPI.INT, CONTROLLER_RANK, Tags.IDLE.tag());
-        }, status, MPI.ANY_SOURCE, 1))).start();
-    }
-
-    void listenToSplit() {
+    protected void listenToSplit() {
         splitCommand = MPI.COMM_WORLD.Irecv(EMPTY_BUFFER, 0, 0, MPI.INT, MPI.ANY_SOURCE, Tags.SPLIT.tag());
     }
 
-    void requestWork(int data) {
+    protected void requestWork(int data) {
         int[] boundBuf = new int[2];
         boundBuf[0] = candidateBound;
         boundBuf[1] = data;
@@ -70,10 +60,6 @@ public abstract class Worker implements IProcessor {
 
         MPI.COMM_WORLD.Recv(packetBuf, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, Tags.WORK.tag());
 
-        if (status.isDone()) {
-            return;
-        }
-
         WorkPacket work = (WorkPacket) packetBuf[0];
 
         nodes = work.getNodes();
@@ -81,7 +67,7 @@ public abstract class Worker implements IProcessor {
         candidateBound = work.getCandidateBound();
     }
 
-    void splitAndSend(int destination) {
+    protected void splitAndSend(int destination) {
         Partition partition = new Partition(nodes, 2);
         nodes = partition.get(0);
 

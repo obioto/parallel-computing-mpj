@@ -1,24 +1,22 @@
-package ch.sebastianhaeni.pancake.processor;
+package ch.sebastianhaeni.pancake.processor.count;
 
 import ch.sebastianhaeni.pancake.dto.Tags;
-import ch.sebastianhaeni.pancake.util.IntListener;
+import ch.sebastianhaeni.pancake.processor.Worker;
 import mpi.MPI;
+import mpi.Request;
 import mpi.Status;
 
 import static ch.sebastianhaeni.pancake.ParallelSolver.CONTROLLER_RANK;
+import static ch.sebastianhaeni.pancake.ParallelSolver.EMPTY_BUFFER;
 
 public class CountWorker extends Worker {
 
     private int count;
+    private Request gatherCommand;
 
     @Override
-    void work() {
-        (new Thread(new IntListener(Tags.GATHER, (source, result) -> {
-            status.done();
-            int[] countResult = new int[1];
-            countResult[0] = count;
-            MPI.COMM_WORLD.Reduce(countResult, 0, new int[1], 0, 1, MPI.INT, MPI.SUM, CONTROLLER_RANK);
-        }, status, CONTROLLER_RANK, 1))).start();
+    protected void work() {
+        gatherCommand = MPI.COMM_WORLD.Irecv(EMPTY_BUFFER, 0, 0, MPI.INT, CONTROLLER_RANK, Tags.GATHER.tag());
 
         while (!nodes.isEmpty()) {
             count();
@@ -61,9 +59,19 @@ public class CountWorker extends Worker {
                 splitAndSend(response.source);
                 listenToSplit();
             }
+
+            if (gatherCommand.Test() != null) {
+                int[] countResult = new int[1];
+                countResult[0] = count;
+                MPI.COMM_WORLD.Reduce(countResult, 0, new int[1], 0, 1, MPI.INT, MPI.SUM, CONTROLLER_RANK);
+                return;
+            }
+            if (killCommand.Test() != null) {
+                return;
+            }
         }
 
-        if (nodes.isEmpty() && !status.isDone()) {
+        if (nodes.isEmpty()) {
             requestWork(count);
         }
     }

@@ -1,11 +1,12 @@
-package ch.sebastianhaeni.pancake.processor;
+package ch.sebastianhaeni.pancake.processor.solve;
 
 import ch.sebastianhaeni.pancake.dto.Tags;
 import ch.sebastianhaeni.pancake.model.Node;
-import ch.sebastianhaeni.pancake.util.IntListener;
+import ch.sebastianhaeni.pancake.processor.Controller;
 import mpi.MPI;
+import mpi.Request;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 
 import static ch.sebastianhaeni.pancake.util.Output.showSolution;
 
@@ -16,7 +17,7 @@ public class SolveController extends Controller {
     }
 
     @Override
-    void work() {
+    protected void work() {
         System.out.printf("Solving a pancake pile in parallel of height %s.\n", initialState.length);
 
         // Start solving
@@ -28,9 +29,22 @@ public class SolveController extends Controller {
             return;
         }
 
-        LinkedList<Node>[] solution = new LinkedList[1];
-        MPI.COMM_WORLD.Recv(solution, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, Tags.RESULT.tag());
-        status.done();
+        ArrayDeque<Node>[] solution = new ArrayDeque[1];
+
+        Request resultCommand = MPI.COMM_WORLD.Irecv(solution, 0, 1, MPI.OBJECT, MPI.ANY_SOURCE, Tags.RESULT.tag());
+        while (resultCommand.Test() == null) {
+            for (int worker : workers) {
+                if (workerListeners[worker - 1].Test() != null) {
+                    handleIdle(worker, workerData[worker - 1]);
+                    initWorkerListener(worker);
+                }
+            }
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 
         long end = System.currentTimeMillis();
         // End solving
@@ -38,15 +52,7 @@ public class SolveController extends Controller {
         finishSolve(solution[0], end - start);
     }
 
-    @Override
-    void initializeListeners() {
-        for (int worker : workers) {
-            (new Thread(new IntListener(Tags.IDLE, this::handleIdle, status, worker, 2))).start();
-        }
-    }
-
-    @Override
-    void handleIdle(int source, int[] result) {
+    private void handleIdle(int source, int[] result) {
         if (idleWorkers.contains(source)) {
             return;
         }
@@ -54,6 +60,7 @@ public class SolveController extends Controller {
 
         if (result[0] > bound) {
             bound = result[0];
+            System.out.format("Got bound %d from %d\n", bound, source);
         }
 
         if (idleWorkers.size() == workerCount) {
@@ -63,11 +70,11 @@ public class SolveController extends Controller {
                 return;
             }
             lastIncrease = bound;
-            (new Thread(this::solve)).start();
+            solve();
         }
     }
 
-    private void finishSolve(LinkedList<Node> solution, long millis) {
+    private void finishSolve(ArrayDeque<Node> solution, long millis) {
         showSolution(solution, millis);
         clearListeners();
     }

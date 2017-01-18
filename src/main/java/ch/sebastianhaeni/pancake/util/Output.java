@@ -1,12 +1,13 @@
 package ch.sebastianhaeni.pancake.util;
 
-import java.util.LinkedList;
-
 import ch.sebastianhaeni.pancake.model.Node;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 
 public class Output {
 
-    public static void showSolution(LinkedList<Node> nodes, long millis) {
+    public static void showSolution(ArrayDeque<Node> nodes, long millis) {
         showSolution(nodes);
         showTime(millis);
     }
@@ -23,21 +24,25 @@ public class Output {
         System.out.format("time: %f sec\n", millis / 1000f);
     }
 
-    public static void showSolution(LinkedList<Node> nodes) {
+    public static void showSolution(ArrayDeque<Node> nodes) {
+        ArrayList<Node> solution = new ArrayList<>(nodes);
+        String solutionString = "";
         for (int i = 0; i < nodes.size(); i++) {
-            int[] state = nodes.get(i).getState();
+            int[] state = solution.get(i).getState();
 
-            String stateString = getStateRepresentation(nodes, i, state);
+            String stateString = getStateRepresentation(solution, i, state);
 
-            System.out.format("state %d: %s\n", i, stateString);
+            solutionString = String.format("state %d: %s\n", nodes.size() - i - 1, stateString) + solutionString;
         }
+
+        System.out.print(solutionString);
     }
 
-    private static String getStateRepresentation(LinkedList<Node> nodes, int i, int[] state) {
+    private static String getStateRepresentation(ArrayList<Node> nodes, int i, int[] state) {
         StringBuilder sb = new StringBuilder();
         int flipPosition = -1;
-        if (i > 0) {
-            int[] prevState = nodes.get(i - 1).getState();
+        if (nodes != null && i < nodes.size() - 1) {
+            int[] prevState = nodes.get(i + 1).getState();
             for (int j = state.length - 1; j >= 0; j--) {
                 if (state[j] != prevState[j]) {
                     flipPosition = j;

@@ -1,7 +1,8 @@
 package ch.sebastianhaeni.pancake.model;
 
 import java.io.Serializable;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
+import java.util.Arrays;
 
 /**
  * A node in a search tree.
@@ -22,7 +23,7 @@ public class Node implements Serializable {
     /**
      * List of child nodes generated from this node.
      */
-    private final LinkedList<Node> children = new LinkedList<>();
+    private final ArrayDeque<Node> children = new ArrayDeque<>();
 
     /**
      * Gap heuristic value.
@@ -66,31 +67,41 @@ public class Node implements Serializable {
      * The gap value can be pre determined so we don't have to loop through again.
      */
     public void nextNodes() {
-        int previousValue = state[1];
         int firstValue = state[0];
+        int previousValue = state[1];
+        int currentValue = state[2];
+
+        boolean[] diffs = new boolean[state.length];
+        int previousDiff = previousValue - firstValue;
+        int currentDiff = Math.abs(currentValue - previousValue);
+        diffs[0] = previousDiff == 1 || previousDiff == -1;
+        diffs[1] = currentDiff == 1 || currentDiff == -1;
 
         for (int i = 2; i < state.length; i++) {
-            int currentValue = state[i];
-            int currentDiff = currentValue - previousValue;
-            previousValue = currentValue;
+            currentValue = state[i];
 
-            if (currentDiff == 1) {
-                // skip correct orders
-                continue;
+            if (i < state.length - 1) {
+                int nextDiff = state[i + 1] - currentValue;
+                diffs[i] = nextDiff == 1 || nextDiff == -1;
+
+                if (diffs[i - 1] && (diffs[i - 2] || diffs[i])) {
+                    // skip sorted pancakes
+                    continue;
+                }
             }
 
             int newDiff = currentValue - firstValue;
+            currentDiff = currentValue - previousValue;
 
-            boolean currentDiffOne = currentDiff == -1;
+            boolean currentDiffOne = currentDiff == 1 || currentDiff == -1;
             boolean newDiffOne = newDiff == 1 || newDiff == -1;
+            previousValue = currentValue;
 
-            if (!currentDiffOne && newDiffOne) {
-                children.push(flip(i, gap - 1));
-            } else if (currentDiffOne && !newDiffOne) {
-                children.push(flip(i, gap + 1));
-            } else {
-                children.push(flip(i, gap));
+            if (currentDiffOne != newDiffOne) {
+                children.push(flip(i, gap + (currentDiffOne ? 1 : -1)));
+                continue;
             }
+            children.push(flip(i, gap));
         }
     }
 
@@ -134,11 +145,21 @@ public class Node implements Serializable {
         return state;
     }
 
-    public LinkedList<Node> getChildren() {
+    public ArrayDeque<Node> getChildren() {
         return children;
     }
 
     public int getGap() {
         return gap;
+    }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+            "state=" + Arrays.toString(state) +
+            ", depth=" + depth +
+            ", children=" + children +
+            ", gap=" + gap +
+            '}';
     }
 }

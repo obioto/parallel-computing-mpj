@@ -1,10 +1,10 @@
 package ch.sebastianhaeni.pancake;
 
-import java.util.LinkedList;
-
 import ch.sebastianhaeni.pancake.model.Node;
 import ch.sebastianhaeni.pancake.util.Generator;
 import ch.sebastianhaeni.pancake.util.Mode;
+
+import java.util.ArrayDeque;
 
 import static ch.sebastianhaeni.pancake.util.Output.showCount;
 import static ch.sebastianhaeni.pancake.util.Output.showSolution;
@@ -12,11 +12,10 @@ import static ch.sebastianhaeni.pancake.util.Output.showSolution;
 public final class IterativeSolver {
 
     // Change mode here!
-    private static final Mode CURRENT_MODE = Mode.SOLVE;
+    private static final Mode CURRENT_MODE = Mode.COUNT;
 
     // Start with alternating sequence
-    //private static final int[] INITIAL_STATE = Generator.alternate(14);
-    private static final int[] INITIAL_STATE = Generator.alternate(14);
+    private static final int[] INITIAL_STATE = Generator.alternate(16);
 
     // Start with random sequence
     // private static final int[] INITIAL_STATE = Generator.random(25));
@@ -25,13 +24,13 @@ public final class IterativeSolver {
     // private static final int[] INITIAL_STATE = new int[]{2, 1, 3, 4});
 
 
-    private static final LinkedList<Node> NODES = new LinkedList<>();
+    private static final ArrayDeque<Node> NODES = new ArrayDeque<>();
 
     private IterativeSolver() {
     }
 
     public static void main(String[] args) {
-        Node root = new Node(INITIAL_STATE);
+        Node root = (new Node(INITIAL_STATE)).augment();
 
         switch (CURRENT_MODE) {
             case COUNT:
@@ -64,7 +63,6 @@ public final class IterativeSolver {
     }
 
     private static void solve(Node root) {
-        root = root.augment();
         NODES.push(root);
         NODES.peek().nextNodes();
 
@@ -104,7 +102,6 @@ public final class IterativeSolver {
     }
 
     private static int count(Node root) {
-        root = root.augment();
         NODES.push(root);
         NODES.peek().nextNodes();
 
@@ -118,6 +115,9 @@ public final class IterativeSolver {
         // We've found the solution if the gap is 0.
         while (!NODES.isEmpty()) {
             if (NODES.peek().getGap() == 0) {
+                if (count == 0) {
+                    System.out.format("Found solution with bound %d. Starting to count...\n", bound);
+                }
                 NODES.pop();
                 count++;
                 continue;
